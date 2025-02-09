@@ -59,6 +59,24 @@ mod search {
                 self.p_index = self.border_array[self.p_index - 1];
             }
         }
+
+        fn step_forward(&mut self) {
+            let BorderArrayState {
+                x,
+                p,
+                x_index: i,
+                p_index: j,
+                ..
+            } = self;
+
+            // Move one step forward (if we can)
+            if &x[*i..*i + 1] == &p[*j..*j + 1] {
+                *j += 1;
+            }
+
+            // Move to the next position
+            *i += 1;
+        }
     }
 
     /*
@@ -146,26 +164,20 @@ mod search {
         fn next(&mut self) -> Option<usize> {
             let n = self.state.x.len();
             let m = self.state.p.len();
+
             while self.state.x_index < n {
                 self.state.shift_pattern_to_border_match();
+                self.state.step_forward();
 
                 let KMPSearch {
                     state:
                         BorderArrayState {
-                            x,
-                            p,
                             border_array: b,
                             x_index: i,
                             p_index: j,
+                            ..
                         },
                 } = self;
-                // Move one step forward (if we can)
-                if &x[*i..*i + 1] == &p[*j..*j + 1] {
-                    *j += 1;
-                }
-
-                // Move to the next position
-                *i += 1;
 
                 // Return if a match was found
                 if *j == m {
