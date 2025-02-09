@@ -11,69 +11,184 @@ mod search {
         })
     }
 
-    pub struct BorderSearch<'a> {
+    struct BorderArrayState<'a> {
+        /// The string we are searching in
         x: &'a str,
+        /// The pattern we are searching for
         p: &'a str,
-        b: Vec<usize>,
-        i: usize,
-        j: usize,
+        /// The border array of the pattern
+        border_array: Vec<usize>,
+        /// The current index in the string
+        x_index: usize,
+        /// The current index in the pattern
+        p_index: usize,
+    }
+
+    impl<'a> BorderArrayState<'_> {
+        fn border_array(p: &str) -> Vec<usize> {
+            let m = p.len();
+            let mut b = vec![0; m];
+            let mut j = 0;
+            for i in 1..m {
+                while j > 0 && &p[i..i + 1] != &p[j..j + 1] {
+                    j = b[j - 1];
+                }
+                if &p[i..i + 1] == &p[j..j + 1] {
+                    j += 1;
+                }
+                b[i] = j;
+            }
+            b
+        }
+        fn new(x: &'a str, p: &'a str) -> BorderArrayState<'a> {
+            let b = Self::border_array(p);
+            BorderArrayState {
+                x,
+                p,
+                border_array: b,
+                x_index: 0,
+                p_index: 0,
+            }
+        }
+
+        fn shift_pattern_to_border_match(&mut self) {
+            while self.p_index > 0
+                && &self.x[self.x_index..self.x_index + 1]
+                    != &self.p[self.p_index..self.p_index + 1]
+            {
+                self.p_index = self.border_array[self.p_index - 1];
+            }
+        }
+    }
+
+    /*
+    fn filter_border_array(ba: Vec<usize>) -> Vec<usize> {
+        for (j, b) in ba.iter().enumerate() {
+            if j == ba.len() {
+                break;
+            }
+            if *b > 0 {
+                let mut k = j - 1;
+                while k > 0 {
+                    if ba[k] == *b {
+                        ba[k] = 0;
+                    }
+                    k -= 1;
+                }
+            }
+        }
+    }*/
+
+    pub struct BorderSearch<'a> {
+        state: BorderArrayState<'a>,
     }
 
     impl<'a> BorderSearch<'a> {
         pub fn new(x: &'a str, p: &'a str) -> Self {
-            let b = border_array(p);
             BorderSearch {
-                x,
-                p,
-                b,
-                i: 0,
-                j: 0,
+                state: BorderArrayState::new(x, p),
             }
         }
-    }
-
-    fn border_array(p: &str) -> Vec<usize> {
-        let m = p.len();
-        let mut b = vec![0; m];
-        let mut j = 0;
-        for i in 1..m {
-            while j > 0 && &p[i..i + 1] != &p[j..j + 1] {
-                j = b[j - 1];
-            }
-            if &p[i..i + 1] == &p[j..j + 1] {
-                j += 1;
-            }
-            b[i] = j;
-        }
-        b
     }
 
     impl<'a> Iterator for BorderSearch<'a> {
         type Item = usize;
 
         fn next(&mut self) -> Option<Self::Item> {
-            let BorderSearch { x, p, b, i, j } = self;
+            let BorderSearch {
+                state:
+                    BorderArrayState {
+                        x,
+                        p,
+                        border_array: b,
+                        x_index: i,
+                        p_index: j,
+                    },
+            } = self;
             let n = x.len();
             let m = p.len();
             while *i < n {
-                while *j > 0 && &x[*i..*i + 1] != &p[*j..*j + 1] {
-                    *j = b[*j - 1];
-                }
+                shift_pattern_to_border_match(x, p, b, i, j);
                 if &x[*i..*i + 1] == &p[*j..*j + 1] {
                     *j += 1;
                 }
                 *i += 1;
                 if *j == m {
                     *j = b[*j - 1];
-                    return Some(self.i - m);
+                    return Some(*i - m);
                 }
             }
             None
         }
     }
 
+    fn shift_pattern_to_border_match(
+        x: &mut &str,
+        p: &mut &str,
+        b: &mut Vec<usize>,
+        i: &mut usize,
+        j: &mut usize,
+    ) {
+        while *j > 0 && &x[*i..*i + 1] != &p[*j..*j + 1] {
+            *j = b[*j - 1];
+        }
+    }
+
     pub fn border_search<'a>(x: &'a str, p: &'a str) -> BorderSearch<'a> {
         BorderSearch::new(x, p)
+    }
+
+    struct KMPSearch<'a> {
+        state: BorderArrayState<'a>,
+    }
+
+    impl<'a> KMPSearch<'a> {
+        pub fn new(x: &'a str, p: &'a str) -> Self {
+            KMPSearch {
+                state: BorderArrayState::new(x, p),
+            }
+        }
+    }
+
+    impl Iterator for KMPSearch<'_> {
+        type Item = usize;
+
+        fn next(&mut self) -> Option<usize> {
+            let n = self.state.x.len();
+            let m = self.state.p.len();
+            while self.state.x_index < n {
+                self.state.shift_pattern_to_border_match();
+
+                let KMPSearch {
+                    state:
+                        BorderArrayState {
+                            x,
+                            p,
+                            border_array: b,
+                            x_index: i,
+                            p_index: j,
+                        },
+                } = self;
+                // Move one step forward (if we can)
+                if &x[*i..*i + 1] == &p[*j..*j + 1] {
+                    *j += 1;
+                }
+
+                // Move to the next position
+                *i += 1;
+
+                // Return if a match was found
+                if *j == m {
+                    *j = b[*j - 1];
+                    return Some(*i - m);
+                }
+            }
+            None
+        }
+    }
+
+    pub fn kmp<'a>(x: &'a str, p: &'a str) -> impl Iterator<Item = usize> + 'a {
+        KMPSearch::new(x, p)
     }
 
     #[cfg(test)]
@@ -83,7 +198,8 @@ mod search {
         #[test]
         fn test_border_array() {
             let p = "abracadabra";
-            let b = border_array(p);
+            let state = BorderArrayState::new(p, p);
+            let b = state.border_array;
             assert_eq!(b, vec![0, 0, 0, 1, 0, 1, 0, 1, 2, 3, 4]);
         }
 
@@ -107,8 +223,14 @@ mod search {
         fn border_search_01() {
             search_01(border_search);
         }
+
+        #[test]
+        fn kmp_01() {
+            search_01(kmp);
+        }
     }
 }
 
 pub use search::border_search;
+pub use search::kmp;
 pub use search::naive;
