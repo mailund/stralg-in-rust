@@ -52,11 +52,17 @@ mod search {
         }
 
         fn shift_pattern_to_border_match(&mut self) {
-            while self.p_index > 0
-                && &self.x[self.x_index..self.x_index + 1]
-                    != &self.p[self.p_index..self.p_index + 1]
-            {
-                self.p_index = self.border_array[self.p_index - 1];
+            let BorderArrayState {
+                x,
+                p,
+                border_array: b,
+                x_index: i,
+                p_index: j,
+                ..
+            } = self;
+
+            while *j > 0 && &x[*i..*i + 1] != &p[*j..*j + 1] {
+                *j = b[*j - 1];
             }
         }
 
