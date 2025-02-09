@@ -52,18 +52,19 @@ mod search {
         type Item = usize;
 
         fn next(&mut self) -> Option<Self::Item> {
-            let n = self.x.len();
-            let m = self.p.len();
-            while self.i < n {
-                while self.j > 0 && &self.x[self.i..self.i + 1] != &self.p[self.j..self.j + 1] {
-                    self.j = self.b[self.j - 1];
+            let BorderSearch { x, p, b, i, j } = self;
+            let n = x.len();
+            let m = p.len();
+            while *i < n {
+                while *j > 0 && &x[*i..*i + 1] != &p[*j..*j + 1] {
+                    *j = b[*j - 1];
                 }
-                if &self.x[self.i..self.i + 1] == &self.p[self.j..self.j + 1] {
-                    self.j += 1;
+                if &x[*i..*i + 1] == &p[*j..*j + 1] {
+                    *j += 1;
                 }
-                self.i += 1;
-                if self.j == m {
-                    self.j = self.b[self.j - 1];
+                *i += 1;
+                if *j == m {
+                    *j = b[*j - 1];
                     return Some(self.i - m);
                 }
             }
