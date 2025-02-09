@@ -95,20 +95,22 @@ mod search {
         type Item = usize;
 
         fn next(&mut self) -> Option<Self::Item> {
-            let BorderSearch {
-                state:
-                    BorderArrayState {
-                        x,
-                        p,
-                        border_array: b,
-                        x_index: i,
-                        p_index: j,
-                    },
-            } = self;
-            let n = x.len();
-            let m = p.len();
-            while *i < n {
-                shift_pattern_to_border_match(x, p, b, i, j);
+            let n = self.state.x.len();
+            let m = self.state.p.len();
+            while self.state.x_index < n {
+                self.state.shift_pattern_to_border_match();
+
+                let BorderSearch {
+                    state:
+                        BorderArrayState {
+                            x,
+                            p,
+                            border_array: b,
+                            x_index: i,
+                            p_index: j,
+                        },
+                } = self;
+
                 if &x[*i..*i + 1] == &p[*j..*j + 1] {
                     *j += 1;
                 }
@@ -119,18 +121,6 @@ mod search {
                 }
             }
             None
-        }
-    }
-
-    fn shift_pattern_to_border_match(
-        x: &mut &str,
-        p: &mut &str,
-        b: &mut Vec<usize>,
-        i: &mut usize,
-        j: &mut usize,
-    ) {
-        while *j > 0 && &x[*i..*i + 1] != &p[*j..*j + 1] {
-            *j = b[*j - 1];
         }
     }
 
