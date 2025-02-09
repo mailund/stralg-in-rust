@@ -11,6 +11,22 @@ mod search {
         })
     }
 
+    fn border_array(p: &str) -> Vec<usize> {
+        let m = p.len();
+        let mut b = vec![0; m];
+        let mut j = 0;
+        for i in 1..m {
+            while j > 0 && &p[i..i + 1] != &p[j..j + 1] {
+                j = b[j - 1];
+            }
+            if &p[i..i + 1] == &p[j..j + 1] {
+                j += 1;
+            }
+            b[i] = j;
+        }
+        b
+    }
+
     struct BorderArrayState<'a> {
         /// The string we are searching in
         x: &'a str,
@@ -25,23 +41,8 @@ mod search {
     }
 
     impl<'a> BorderArrayState<'_> {
-        fn border_array(p: &str) -> Vec<usize> {
-            let m = p.len();
-            let mut b = vec![0; m];
-            let mut j = 0;
-            for i in 1..m {
-                while j > 0 && &p[i..i + 1] != &p[j..j + 1] {
-                    j = b[j - 1];
-                }
-                if &p[i..i + 1] == &p[j..j + 1] {
-                    j += 1;
-                }
-                b[i] = j;
-            }
-            b
-        }
         fn new(x: &'a str, p: &'a str) -> BorderArrayState<'a> {
-            let b = Self::border_array(p);
+            let b = border_array(p);
             BorderArrayState {
                 x,
                 p,
@@ -149,13 +150,27 @@ mod search {
     }
 
     struct KMPSearch<'a> {
-        state: BorderArrayState<'a>,
+        /// The string we are searching in
+        x: &'a str,
+        /// The pattern we are searching for
+        p: &'a str,
+        /// The border array of the pattern
+        border_array: Vec<usize>,
+        /// The current index in the string
+        x_index: usize,
+        /// The current index in the pattern
+        p_index: usize,
     }
 
     impl<'a> KMPSearch<'a> {
-        pub fn new(x: &'a str, p: &'a str) -> Self {
+        fn new(x: &'a str, p: &'a str) -> KMPSearch<'a> {
+            let b = border_array(p);
             KMPSearch {
-                state: BorderArrayState::new(x, p),
+                x,
+                p,
+                border_array: b,
+                x_index: 0,
+                p_index: 0,
             }
         }
     }
@@ -164,23 +179,31 @@ mod search {
         type Item = usize;
 
         fn next(&mut self) -> Option<usize> {
-            let n = self.state.x.len();
-            let m = self.state.p.len();
+            let KMPSearch {
+                x,
+                p,
+                border_array: b,
+                x_index: i,
+                p_index: j,
+                ..
+            } = self;
 
-            while self.state.x_index < n {
-                self.state.shift_pattern_to_border_match();
-                self.state.step_forward();
+            let n = x.len();
+            let m = p.len();
 
-                let KMPSearch {
-                    state:
-                        BorderArrayState {
-                            border_array: b,
-                            x_index: i,
-                            p_index: j,
-                            ..
-                        },
-                } = self;
+            while *i < n {
+                // Shift pattern until it matches the border
+                while *j > 0 && &x[*i..*i + 1] != &p[*j..*j + 1] {
+                    *j = b[*j - 1];
+                }
 
+                // Move one step forward (if we can)
+                if &x[*i..*i + 1] == &p[*j..*j + 1] {
+                    *j += 1;
+                }
+
+                // Move to the next position
+                *i += 1;
                 // Return if a match was found
                 if *j == m {
                     *j = b[*j - 1];
