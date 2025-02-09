@@ -117,22 +117,18 @@ mod search {
             let m = self.state.p.len();
             while self.state.x_index < n {
                 self.state.shift_pattern_to_border_match();
+                self.state.step_forward();
 
                 let BorderSearch {
                     state:
                         BorderArrayState {
-                            x,
-                            p,
                             border_array: b,
                             x_index: i,
                             p_index: j,
+                            ..
                         },
                 } = self;
 
-                if &x[*i..*i + 1] == &p[*j..*j + 1] {
-                    *j += 1;
-                }
-                *i += 1;
                 if *j == m {
                     *j = b[*j - 1];
                     return Some(*i - m);
