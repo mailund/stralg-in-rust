@@ -97,8 +97,9 @@ mod search {
                     *j += 1;
                 }
 
-                // Move to the next position
+                // Move to the next position (saving it for the next call to next)
                 *i += 1;
+
                 // Return if a match was found
                 if *j == m {
                     *j = b[*j - 1];
@@ -166,8 +167,9 @@ mod search {
                     *j += 1;
                 }
 
-                // Move to the next position
+                // Move to the next position (saving it for the next call to next)
                 *i += 1;
+
                 // Return if a match was found
                 if *j == m {
                     *j = b[*j - 1];
