@@ -7,3 +7,4 @@ pub use patterns::strict_border_array;
 pub use search::kmp;
 pub use search::naive;
 pub use utils::Alphabet;
+pub use utils::CharArray;

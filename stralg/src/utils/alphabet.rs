@@ -6,15 +6,13 @@ use std::fmt::Debug;
 pub enum Alphabet {
     U8(AlphabetImpl<u8>),
     U16(AlphabetImpl<u16>),
-    U32(AlphabetImpl<u32>),
 }
 
-/// Represents a vector of character indices, which can be of type `u8`, `u16`, or `u32`.
+/// Represents a vector of character indices, which can be of type `u8` or `u16`.
 #[derive(Clone, PartialEq, Eq)]
 pub enum CharArray {
     U8(Vec<u8>),
     U16(Vec<u16>),
-    U32(Vec<u32>),
 }
 
 impl Alphabet {
@@ -46,7 +44,7 @@ impl Alphabet {
         } else if len <= u16::MAX as usize {
             Ok(Alphabet::U16(AlphabetImpl::new(chars)?))
         } else {
-            Ok(Alphabet::U32(AlphabetImpl::new(chars)?))
+            Err(format!("Alphabet too large: {}", len).into())
         }
     }
 
@@ -102,10 +100,36 @@ impl Alphabet {
         match self {
             Alphabet::U8(impl_) => impl_.translate(s).map(CharArray::U8),
             Alphabet::U16(impl_) => impl_.translate(s).map(CharArray::U16),
-            Alphabet::U32(impl_) => impl_.translate(s).map(CharArray::U32),
         }
     }
 
+    /// Translates a vector of character indices back into a string.
+    ///
+    /// # Arguments
+    ///
+    /// * `array` - A `CharArray` containing the indices to translate.
+    ///
+    /// # Returns
+    ///
+    /// A `String` representing the characters corresponding to the indices.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use stralg::utils::{Alphabet, CharArray};
+    ///
+    /// let chars = vec!['a', 'b', 'c'];
+    /// let alphabet = Alphabet::new(&chars).unwrap();
+    /// let translated = alphabet.translate("abc").unwrap();
+    /// let s = alphabet.as_string(&translated).unwrap();
+    /// assert_eq!(s, "abc");
+    /// ```
+    pub fn as_string(&self, array: &CharArray) -> Result<String, Box<dyn std::error::Error>> {
+        match self {
+            Alphabet::U8(impl_) => impl_.as_string(array.to_u8().unwrap()),
+            Alphabet::U16(impl_) => impl_.as_string(array.to_u16().unwrap()),
+        }
+    }
     /// Checks if the alphabet contains the given character.
     ///
     /// # Arguments
@@ -130,7 +154,6 @@ impl Alphabet {
         match self {
             Alphabet::U8(impl_) => impl_.contains(c),
             Alphabet::U16(impl_) => impl_.contains(c),
-            Alphabet::U32(impl_) => impl_.contains(c),
         }
     }
 
@@ -158,7 +181,6 @@ impl Alphabet {
         match self {
             Alphabet::U8(impl_) => impl_.index(c).map(|i| i as usize),
             Alphabet::U16(impl_) => impl_.index(c).map(|i| i as usize),
-            Alphabet::U32(impl_) => impl_.index(c).map(|i| i as usize),
         }
     }
 
@@ -184,7 +206,6 @@ impl Alphabet {
         match self {
             Alphabet::U8(impl_) => impl_.len(),
             Alphabet::U16(impl_) => impl_.len(),
-            Alphabet::U32(impl_) => impl_.len(),
         }
     }
 }
@@ -196,7 +217,7 @@ pub struct AlphabetImpl<T> {
 
 impl<T> AlphabetImpl<T>
 where
-    T: Copy + TryFrom<usize>,
+    T: Copy + TryFrom<usize> + Into<usize>,
 {
     fn new(chars: &[char]) -> Result<AlphabetImpl<T>, T::Error> {
         let mut sorted_chars = chars.to_vec();
@@ -231,6 +252,19 @@ where
             })
             .collect()
     }
+
+    fn as_string(&self, array: &[T]) -> Result<String, Box<dyn std::error::Error>> {
+        let mut result = String::new();
+        for &index in array {
+            let index: usize = index.into();
+            if index < self.chars.len() {
+                result.push(self.chars[index]);
+            } else {
+                return Err(format!("Index '{}' out of bounds", index).into());
+            }
+        }
+        Ok(result)
+    }
 }
 
 impl CharArray {
@@ -238,7 +272,6 @@ impl CharArray {
         match self {
             CharArray::U8(vec) => vec.iter().map(|&x| x as usize).collect(),
             CharArray::U16(vec) => vec.iter().map(|&x| x as usize).collect(),
-            CharArray::U32(vec) => vec.iter().map(|&x| x as usize).collect(),
         }
     }
 
@@ -262,7 +295,6 @@ impl std::fmt::Debug for CharArray {
         match self {
             CharArray::U8(vec) => vec.fmt(f),
             CharArray::U16(vec) => vec.fmt(f),
-            CharArray::U32(vec) => vec.fmt(f),
         }
     }
 }
@@ -272,7 +304,6 @@ impl std::fmt::Display for CharArray {
         match self {
             CharArray::U8(vec) => vec.fmt(f),
             CharArray::U16(vec) => vec.fmt(f),
-            CharArray::U32(vec) => vec.fmt(f),
         }
     }
 }
