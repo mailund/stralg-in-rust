@@ -195,7 +195,7 @@ mod search {
 
     impl<'a> KMPSearch<'a> {
         fn new(x: &'a str, p: &'a str) -> KMPSearch<'a> {
-            let b = border_array(p);
+            let b = strict_border_array(p);
             KMPSearch {
                 x,
                 p,
