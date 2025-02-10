@@ -47,12 +47,15 @@
 /// let matches: Vec<usize> = naive(text, pattern).collect();
 /// assert_eq!(matches, vec![2]);
 /// ```
-pub fn naive<'a>(x: &'a str, p: &'a str) -> impl Iterator<Item = usize> + 'a {
+pub fn naive(x: &str, p: &str) -> impl Iterator<Item = usize> {
+    // Converting the strings to Vec<char> to get random access to unicode strings
+    let x: Vec<char> = x.chars().collect();
+    let p: Vec<char> = p.chars().collect();
     let n = x.len();
     let m = p.len();
-    (0..=n - m).filter(move |i| {
+    (0..=n - m).filter(move |&i| {
         let mut j = 0;
-        while j < m && &x[i + j..i + j + 1] == &p[j..j + 1] {
+        while j < m && x[i + j] == p[j] {
             j += 1;
         }
         j == m

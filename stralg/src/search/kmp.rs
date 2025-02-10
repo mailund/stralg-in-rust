@@ -1,10 +1,10 @@
 use crate::strict_border_array;
 
-struct KMPSearch<'a> {
+struct KMPSearch {
     /// The string we are searching in
-    x: &'a str,
+    x: Vec<char>,
     /// The pattern we are searching for
-    p: &'a str,
+    p: Vec<char>,
     /// The border array of the pattern
     border_array: Vec<usize>,
     /// The current index in the string
@@ -13,12 +13,14 @@ struct KMPSearch<'a> {
     p_index: usize,
 }
 
-impl<'a> KMPSearch<'a> {
-    fn new(x: &'a str, p: &'a str) -> KMPSearch<'a> {
+impl KMPSearch {
+    fn new(x: &str, p: &str) -> KMPSearch {
         let b = strict_border_array(p);
+        let x: Vec<char> = x.chars().collect();
+        let p: Vec<char> = p.chars().collect();
         KMPSearch {
-            x,
-            p,
+            x: x,
+            p: p,
             border_array: b,
             x_index: 0,
             p_index: 0,
@@ -26,7 +28,7 @@ impl<'a> KMPSearch<'a> {
     }
 }
 
-impl Iterator for KMPSearch<'_> {
+impl Iterator for KMPSearch {
     type Item = usize;
 
     fn next(&mut self) -> Option<usize> {
@@ -44,12 +46,12 @@ impl Iterator for KMPSearch<'_> {
 
         while *i < n {
             // Shift pattern until it matches the border
-            while *j > 0 && &x[*i..*i + 1] != &p[*j..*j + 1] {
+            while *j > 0 && &x[*i] != &p[*j] {
                 *j = b[*j - 1];
             }
 
             // Move one step forward (if we can)
-            if &x[*i..*i + 1] == &p[*j..*j + 1] {
+            if &x[*i] == &p[*j] {
                 *j += 1;
             }
 
