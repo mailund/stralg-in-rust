@@ -110,6 +110,18 @@ mod search {
         }
     }
 
+    /// Returns an iterator over the starting indices of occurrences of the pattern `p` in the text `x`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use stralg::border_search;
+    ///
+    /// let text = "abracadabra";
+    /// let pattern = "abr";
+    /// let matches: Vec<usize> = border_search(text, pattern).collect();
+    /// assert_eq!(matches, vec![0, 7]);
+    /// ```
     pub fn border_search<'a>(x: &'a str, p: &'a str) -> BorderSearch<'a> {
         BorderSearch::new(x, p)
     }
@@ -180,6 +192,18 @@ mod search {
         }
     }
 
+    /// Returns an iterator over the starting indices of occurrences of the pattern `p` in the text `x`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use stralg::kmp;
+    ///
+    /// let text = "abracadabra";
+    /// let pattern = "abr";
+    /// let matches: Vec<usize> = kmp(text, pattern).collect();
+    /// assert_eq!(matches, vec![0, 7]);
+    /// ```
     pub fn kmp<'a>(x: &'a str, p: &'a str) -> impl Iterator<Item = usize> + 'a {
         KMPSearch::new(x, p)
     }
