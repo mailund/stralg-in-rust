@@ -1,11 +1,20 @@
 use std::collections::HashMap;
 use std::convert::TryFrom;
+use std::fmt::Debug;
 
 /// Represents an alphabet with a set of characters and their corresponding indices.
 pub enum Alphabet {
     U8(AlphabetImpl<u8>),
     U16(AlphabetImpl<u16>),
     U32(AlphabetImpl<u32>),
+}
+
+/// Represents a vector of character indices, which can be of type `u8`, `u16`, or `u32`.
+#[derive(Clone, PartialEq, Eq)]
+pub enum CharArray {
+    U8(Vec<u8>),
+    U16(Vec<u16>),
+    U32(Vec<u32>),
 }
 
 impl Alphabet {
@@ -86,18 +95,15 @@ impl Alphabet {
     ///
     /// let chars = vec!['a', 'b', 'c'];
     /// let alphabet = Alphabet::new(&chars).unwrap();
-    /// let indices = alphabet.translate("abc").unwrap();
-    /// assert_eq!(indices, vec![0, 1, 2]);
+    /// let translated = alphabet.translate("abc").unwrap();
+    /// assert_eq!(translated.to_vec(), vec![0, 1, 2]);
     /// ```
-    pub fn translate(&self, s: &str) -> Result<Vec<usize>, Box<dyn std::error::Error>> {
-        let mut result = Vec::with_capacity(s.len());
-        for c in s.chars() {
-            match self.index(c) {
-                Some(index) => result.push(index),
-                None => return Err(format!("Character '{}' not found in alphabet", c).into()),
-            }
+    pub fn translate(&self, s: &str) -> Result<CharArray, Box<dyn std::error::Error>> {
+        match self {
+            Alphabet::U8(impl_) => impl_.translate(s).map(CharArray::U8),
+            Alphabet::U16(impl_) => impl_.translate(s).map(CharArray::U16),
+            Alphabet::U32(impl_) => impl_.translate(s).map(CharArray::U32),
         }
-        Ok(result)
     }
 
     /// Checks if the alphabet contains the given character.
@@ -215,5 +221,58 @@ where
 
     fn len(&self) -> usize {
         self.chars.len()
+    }
+
+    fn translate(&self, s: &str) -> Result<Vec<T>, Box<dyn std::error::Error>> {
+        s.chars()
+            .map(|c| {
+                self.index(c)
+                    .ok_or_else(|| format!("Character '{}' not found in alphabet", c).into())
+            })
+            .collect()
+    }
+}
+
+impl CharArray {
+    pub fn to_vec(&self) -> Vec<usize> {
+        match self {
+            CharArray::U8(vec) => vec.iter().map(|&x| x as usize).collect(),
+            CharArray::U16(vec) => vec.iter().map(|&x| x as usize).collect(),
+            CharArray::U32(vec) => vec.iter().map(|&x| x as usize).collect(),
+        }
+    }
+
+    pub fn to_u8(&self) -> Option<&[u8]> {
+        match self {
+            CharArray::U8(vec) => Some(vec),
+            _ => None,
+        }
+    }
+
+    pub fn to_u16(&self) -> Option<&[u16]> {
+        match self {
+            CharArray::U16(vec) => Some(vec),
+            _ => None,
+        }
+    }
+}
+
+impl std::fmt::Debug for CharArray {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            CharArray::U8(vec) => vec.fmt(f),
+            CharArray::U16(vec) => vec.fmt(f),
+            CharArray::U32(vec) => vec.fmt(f),
+        }
+    }
+}
+
+impl std::fmt::Display for CharArray {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            CharArray::U8(vec) => vec.fmt(f),
+            CharArray::U16(vec) => vec.fmt(f),
+            CharArray::U32(vec) => vec.fmt(f),
+        }
     }
 }
