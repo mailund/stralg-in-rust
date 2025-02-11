@@ -22,15 +22,19 @@ jobs:
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install -y lcov
 
+      - name: Install cargo-tarpaulin
+        run: cargo install cargo-tarpaulin --locked
+
       - name: Run tests with coverage
-        run: |
-          cargo install cargo-tarpaulin --locked
-          cargo tarpaulin --verbose --timeout 120 --out Xml
+        run: cargo tarpaulin --verbose --timeout 120 --out Xml
+
+      - name: Verify coverage file
+        run: ls -l cobertura.xml || echo "Coverage file not found!"
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
-          files: ./coverage.xml
+          files: ./cobertura.xml
           flags: unittests
           name: codecov-umbrella
           fail_ci_if_error: true
