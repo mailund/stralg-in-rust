@@ -82,7 +82,7 @@ impl Iterator for NaiveSearch {
 /// assert_eq!(matches, vec![2]);
 /// ```
 pub fn naive(x: &str, p: &str) -> impl Iterator<Item = usize> {
-    let alpha = Alphabet::from_string(x);
+    let alpha = Alphabet::from_str(x);
     let x: Vec<u8> = alpha.translate(x).unwrap();
     let p = alpha.translate::<u8>(p).ok();
     let i = 0;

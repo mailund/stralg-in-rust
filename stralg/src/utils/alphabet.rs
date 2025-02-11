@@ -62,12 +62,12 @@ impl Alphabet {
     /// use stralg::utils::Alphabet;
     ///
     /// let s = "abc";
-    /// let alphabet = Alphabet::from_string(s);
+    /// let alphabet = Alphabet::from_str(s);
     /// assert!(alphabet.contains('a'));
     /// assert_eq!(alphabet.index('b'), Some(2));
     /// assert_eq!(alphabet.len(), 3);
     /// ```
-    pub fn from_string(s: &str) -> Alphabet {
+    pub fn from_str(s: &str) -> Alphabet {
         let chars: Vec<char> = s.chars().collect();
         Alphabet::new(&chars)
     }
