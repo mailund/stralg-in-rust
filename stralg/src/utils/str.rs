@@ -2,12 +2,12 @@ use super::{Alphabet, CharacterTrait, SizedAlphabet};
 use std::rc::Rc;
 
 /// A string type that uses a custom alphabet for character encoding.
-pub struct Str<Char: CharacterTrait> {
+pub struct SizedStr<Char: CharacterTrait> {
     pub alphabet: Rc<SizedAlphabet<Char>>,
     char_vector: Vec<Char>,
 }
 
-impl<Char: CharacterTrait> Str<Char> {
+impl<Char: CharacterTrait> SizedStr<Char> {
     /// Creates a new `Str` from a given alphabet and a vector of characters.
     ///
     /// # Arguments
@@ -17,17 +17,17 @@ impl<Char: CharacterTrait> Str<Char> {
     ///
     /// # Returns
     ///
-    /// A new `Str` instance.
+    /// A new `SizedStr` instance.
     ///
     /// # Examples
     ///
     /// ```
-    /// use stralg::utils::{SizedAlphabet, Str};
+    /// use stralg::utils::{SizedAlphabet, SizedStr};
     /// use std::rc::Rc;
     ///
     /// let alphabet = Rc::new(SizedAlphabet::new(&['a', 'b', 'c']).unwrap());
     /// let chars = vec![1u8, 2, 3];
-    /// let s = Str::new(&alphabet, chars);
+    /// let s = SizedStr::new(&alphabet, chars);
     /// assert_eq!(s[0], 1);
     /// assert_eq!(s[1], 2);
     /// assert_eq!(s[2], 3);
@@ -47,14 +47,14 @@ impl<Char: CharacterTrait> Str<Char> {
     ///
     /// # Returns
     ///
-    /// A new `Str` instance.
+    /// A new `SizedStr` instance.
     ///
     /// # Examples
     ///
     /// ```
-    /// use stralg::utils::Str;
+    /// use stralg::utils::SizedStr;
     ///
-    /// let s = Str::<u8>::from_str("abc").unwrap();
+    /// let s = SizedStr::<u8>::from_str("abc").unwrap();
     /// assert_eq!(s[0], 1);
     /// assert_eq!(s[1], 2);
     /// assert_eq!(s[2], 3);
@@ -73,16 +73,16 @@ impl<Char: CharacterTrait> Str<Char> {
     ///
     /// # Returns
     ///
-    /// A new `Str` instance.
+    /// A new `SizedStr` instance.
     ///
     /// # Examples
     ///
     /// ```
-    /// use stralg::utils::{SizedAlphabet, Str};
+    /// use stralg::utils::{SizedAlphabet, SizedStr};
     /// use std::rc::Rc;
     ///
     /// let alphabet = Rc::new(SizedAlphabet::new(&['a', 'b', 'c']).unwrap());
-    /// let s = Str::<u8>::from_str_with_alphabet("abc", &alphabet).unwrap();
+    /// let s = SizedStr::<u8>::from_str_with_alphabet("abc", &alphabet).unwrap();
     /// assert_eq!(s[0], 1);
     /// assert_eq!(s[1], 2);
     /// assert_eq!(s[2], 3);
@@ -105,8 +105,8 @@ impl<Char: CharacterTrait> Str<Char> {
         Ok(Self::new(&alphabet, x))
     }
 
-    /// Creates a new `Str` from a string slice using the same alphabet
-    /// as the current `Str`. This maps the  two strings to the same string-space,
+    /// Creates a new `SizedStr` from a string slice using the same alphabet
+    /// as the current `SizedStr`. This maps the  two strings to the same string-space,
     /// so they can be manipulated together.
     ///
     /// # Arguments
@@ -115,17 +115,17 @@ impl<Char: CharacterTrait> Str<Char> {
     ///
     /// # Returns
     ///
-    /// A new `Str` instance.
+    /// A new `SizedStr` instance.
     ///
     /// # Examples
     ///
     /// ```
-    /// use stralg::utils::{SizedAlphabet, Str};
+    /// use stralg::utils::{SizedAlphabet, SizedStr};
     /// use std::rc::Rc;
     ///
     /// let alphabet = Rc::new(SizedAlphabet::new(&['a', 'b', 'c']).unwrap());
     /// let chars = vec![1u8, 2, 3];
-    /// let s1 = Str::new(&alphabet, chars);
+    /// let s1 = SizedStr::new(&alphabet, chars);
     /// let s2 = s1.translate_to_this_alphabet("abc").unwrap();
     /// assert_eq!(s2[0], 1);
     /// assert_eq!(s2[1], 2);
@@ -145,12 +145,12 @@ impl<Char: CharacterTrait> Str<Char> {
     /// # Examples
     ///
     /// ```
-    /// use stralg::utils::{SizedAlphabet, Str};
+    /// use stralg::utils::{SizedAlphabet, SizedStr};
     /// use std::rc::Rc;
     ///
     /// let alphabet = Rc::new(SizedAlphabet::new(&['a', 'b', 'c']).unwrap());
     /// let chars = vec![1u8, 2, 3];
-    /// let s = Str::new(&alphabet, chars);
+    /// let s = SizedStr::new(&alphabet, chars);
     /// assert_eq!(s.len(), 3);
     /// ```
     pub fn len(&self) -> usize {
@@ -158,7 +158,7 @@ impl<Char: CharacterTrait> Str<Char> {
     }
 }
 
-impl<Char: CharacterTrait> std::ops::Index<usize> for Str<Char>
+impl<Char: CharacterTrait> std::ops::Index<usize> for SizedStr<Char>
 where
     Char: TryFrom<usize> + Copy,
     <Char as TryFrom<usize>>::Error: std::fmt::Debug,
@@ -170,7 +170,7 @@ where
     }
 }
 
-impl<Char: CharacterTrait> std::ops::IndexMut<usize> for Str<Char>
+impl<Char: CharacterTrait> std::ops::IndexMut<usize> for SizedStr<Char>
 where
     Char: TryFrom<usize> + Copy,
     <Char as TryFrom<usize>>::Error: std::fmt::Debug,
