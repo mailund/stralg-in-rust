@@ -1,12 +1,18 @@
-use crate::utils::{Alphabet, SizedAlphabet, SizedStr};
+use crate::utils::{CharacterTrait, SizedStr, Str};
 
-struct NaiveSearch {
-    x: SizedStr<u8>,
-    p: Option<SizedStr<u8>>,
+struct NaiveSearch<Char: CharacterTrait>
+where
+    <Char as TryFrom<usize>>::Error: std::fmt::Debug, // FIXME: Add this to CharacterTrait
+{
+    x: SizedStr<Char>,
+    p: Option<SizedStr<Char>>,
     i: usize,
 }
 
-impl Iterator for NaiveSearch {
+impl<Char: CharacterTrait> Iterator for NaiveSearch<Char>
+where
+    <Char as TryFrom<usize>>::Error: std::fmt::Debug,
+{
     type Item = usize;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -82,9 +88,17 @@ impl Iterator for NaiveSearch {
 /// assert_eq!(matches, vec![2]);
 /// ```
 pub fn naive(x: &str, p: &str) -> impl Iterator<Item = usize> {
-    // FIXME: pick size of alphabet based on input
     let x = SizedStr::<u8>::from_str(x).unwrap();
     let p = x.translate_to_this_alphabet(p).ok();
-    let i = 0;
-    NaiveSearch { x, p, i }
+    sized_naive(x, p)
+}
+
+pub fn sized_naive<Char: CharacterTrait>(
+    x: SizedStr<Char>,
+    p: Option<SizedStr<Char>>,
+) -> impl Iterator<Item = usize>
+where
+    <Char as TryFrom<usize>>::Error: std::fmt::Debug,
+{
+    NaiveSearch { x, p, i: 0 }
 }

@@ -1,9 +1,10 @@
 use super::CharacterTrait;
 use std::collections::HashMap;
+use std::rc::Rc;
 
 pub enum Alphabet {
-    U8(SizedAlphabet<u8>),
-    U16(SizedAlphabet<u16>),
+    U8(Rc<SizedAlphabet<u8>>),
+    U16(Rc<SizedAlphabet<u16>>),
 }
 
 impl Alphabet {
@@ -11,8 +12,8 @@ impl Alphabet {
         const SMALL: usize = u8::MAX as usize;
         const LARGE: usize = u16::MAX as usize;
         match chars.len() {
-            0..SMALL => Ok(Alphabet::U8(SizedAlphabet::new(chars)?)),
-            SMALL..LARGE => Ok(Alphabet::U16(SizedAlphabet::new(chars)?)),
+            0..SMALL => Ok(Alphabet::U8(Rc::new(SizedAlphabet::new(chars)?))),
+            SMALL..LARGE => Ok(Alphabet::U16(Rc::new(SizedAlphabet::new(chars)?))),
             _ => Err("Alphabet too large".into()),
         }
     }

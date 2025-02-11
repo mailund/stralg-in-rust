@@ -1,6 +1,54 @@
 use super::{Alphabet, CharacterTrait, SizedAlphabet};
 use std::rc::Rc;
 
+pub enum Str {
+    U8(SizedStr<u8>),
+    U16(SizedStr<u16>),
+}
+
+impl Str {
+    fn new(alphabet: &Rc<Alphabet>, x: &str) -> Self {
+        use Str::{U16, U8};
+        match alphabet.as_ref() {
+            Alphabet::U8(alphabet) => {
+                let alphabet = alphabet.clone();
+                let x = SizedStr::<u8>::from_str_with_alphabet(x, &alphabet).unwrap();
+                U8(x)
+            }
+            Alphabet::U16(alphabet) => {
+                let alphabet = alphabet.clone();
+                let x = SizedStr::<u16>::from_str_with_alphabet(x, &alphabet).unwrap();
+                U16(x)
+            }
+        }
+    }
+
+    pub fn from_str(x: &str) -> Self {
+        let alphabet = Alphabet::from_str(x).unwrap();
+        Self::new(&Rc::new(alphabet), x)
+    }
+
+    pub fn from_str_with_alphabet(x: &str, alphabet: &Rc<Alphabet>) -> Self {
+        Self::new(alphabet, x)
+    }
+
+    pub fn translate_to_this_alphabet(&self, s: &str) -> Result<Self, Box<dyn std::error::Error>> {
+        use Str::{U16, U8};
+        let translated = match self {
+            U8(x) => U8(x.translate_to_this_alphabet(s)?),
+            U16(x) => U16(x.translate_to_this_alphabet(s)?),
+        };
+        Ok(translated)
+    }
+
+    pub fn len(&self) -> usize {
+        match self {
+            Str::U8(s) => s.len(),
+            Str::U16(s) => s.len(),
+        }
+    }
+}
+
 /// A string type that uses a custom alphabet for character encoding.
 pub struct SizedStr<Char: CharacterTrait> {
     pub alphabet: Rc<SizedAlphabet<Char>>,
