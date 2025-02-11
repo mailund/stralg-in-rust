@@ -1,21 +1,13 @@
-use super::SizedAlphabet;
+use super::{AlphabetChar, SizedAlphabet};
 use std::rc::Rc;
 
 /// A string type that uses a custom alphabet for character encoding.
-pub struct Str<Char>
-where
-    Char: TryFrom<usize> + Copy,
-    <Char as TryFrom<usize>>::Error: std::fmt::Debug,
-{
-    pub alphabet: Rc<SizedAlphabet>,
+pub struct Str<Char: AlphabetChar> {
+    pub alphabet: Rc<SizedAlphabet<Char>>,
     chars: Vec<Char>,
 }
 
-impl<Char> Str<Char>
-where
-    Char: TryFrom<usize> + Copy,
-    <Char as TryFrom<usize>>::Error: std::fmt::Debug,
-{
+impl<Char: AlphabetChar> Str<Char> {
     /// Creates a new `Str` from a given alphabet and a vector of characters.
     ///
     /// # Arguments
@@ -40,7 +32,7 @@ where
     /// assert_eq!(s[1], 2);
     /// assert_eq!(s[2], 3);
     /// ```
-    pub fn new(alphabet: &Rc<SizedAlphabet>, chars: Vec<Char>) -> Self {
+    pub fn new(alphabet: &Rc<SizedAlphabet<Char>>, chars: Vec<Char>) -> Self {
         Self {
             alphabet: alphabet.clone(),
             chars,
@@ -69,7 +61,7 @@ where
     /// ```
     pub fn from_str(s: &str) -> Result<Self, Box<dyn std::error::Error>> {
         let alphabet = Rc::new(SizedAlphabet::from_str(s));
-        let chars = alphabet.translate::<Char>(s)?;
+        let chars = alphabet.translate(s)?;
         Ok(Self::new(&alphabet, chars))
     }
 
@@ -98,9 +90,9 @@ where
     /// ```
     pub fn from_str_with_alphabet(
         s: &str,
-        alphabet: &Rc<SizedAlphabet>,
+        alphabet: &Rc<SizedAlphabet<Char>>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
-        let chars = alphabet.translate::<Char>(s)?;
+        let chars = alphabet.translate(s)?;
         Ok(Self::new(alphabet, chars))
     }
 
@@ -132,12 +124,12 @@ where
     /// ```
     pub fn to_shared_alphabet(&self, s: &str) -> Result<Self, Box<dyn std::error::Error>> {
         let alphabet = self.alphabet.clone();
-        let chars = alphabet.translate::<Char>(s)?;
+        let chars = alphabet.translate(s)?;
         Ok(Self::new(&alphabet, chars))
     }
 }
 
-impl<Char> std::ops::Index<usize> for Str<Char>
+impl<Char: AlphabetChar> std::ops::Index<usize> for Str<Char>
 where
     Char: TryFrom<usize> + Copy,
     <Char as TryFrom<usize>>::Error: std::fmt::Debug,
@@ -149,7 +141,7 @@ where
     }
 }
 
-impl<Char> std::ops::IndexMut<usize> for Str<Char>
+impl<Char: AlphabetChar> std::ops::IndexMut<usize> for Str<Char>
 where
     Char: TryFrom<usize> + Copy,
     <Char as TryFrom<usize>>::Error: std::fmt::Debug,
