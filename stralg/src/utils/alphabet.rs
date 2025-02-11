@@ -1,18 +1,13 @@
 use std::collections::HashMap;
-use std::convert::TryFrom;
-use std::fmt::Debug;
 
-/// Represents an alphabet with a set of characters and their corresponding indices.
-pub enum Alphabet {
-    U8(AlphabetImpl<u8>),
-    U16(AlphabetImpl<u16>),
-}
-
-/// Represents a vector of character indices, which can be of type `u8` or `u16`.
-#[derive(Clone, PartialEq, Eq)]
-pub enum CharArray {
-    U8(Vec<u8>),
-    U16(Vec<u16>),
+/// An alphabet we can have strings over.
+///
+/// This is predominantly used for mapping UTF-8 str strings to vectors where we have
+/// constant time access to the characters, without relying on a Vec<char> which would take
+/// up four bytes per character.
+pub struct Alphabet {
+    chars: Vec<char>,
+    indices: HashMap<char, usize>,
 }
 
 impl Alphabet {
@@ -32,19 +27,20 @@ impl Alphabet {
     /// use stralg::utils::Alphabet;
     ///
     /// let chars = vec!['a', 'b', 'c'];
-    /// let alphabet = Alphabet::new(&chars).unwrap();
+    /// let alphabet = Alphabet::new(&chars);
     /// assert!(alphabet.contains('a'));
-    /// assert_eq!(alphabet.index('b'), Some(1));
+    /// assert_eq!(alphabet.index('b'), Some(2));
     /// assert_eq!(alphabet.len(), 3);
     /// ```
-    pub fn new(chars: &[char]) -> Result<Alphabet, Box<dyn std::error::Error>> {
+    pub fn new(chars: &[char]) -> Alphabet {
         let len = chars.len();
-        if len <= u8::MAX as usize {
-            Ok(Alphabet::U8(AlphabetImpl::new(chars)?))
-        } else if len <= u16::MAX as usize {
-            Ok(Alphabet::U16(AlphabetImpl::new(chars)?))
-        } else {
-            Err(format!("Alphabet too large: {}", len).into())
+        let mut indices = HashMap::with_capacity(len);
+        for (i, &c) in chars.iter().enumerate() {
+            indices.insert(c, i + 1); // The +1 is to leave room for the sentinel at zero
+        }
+        Alphabet {
+            chars: chars.to_vec(),
+            indices,
         }
     }
 
@@ -66,12 +62,12 @@ impl Alphabet {
     /// use stralg::utils::Alphabet;
     ///
     /// let s = "abc";
-    /// let alphabet = Alphabet::from_string(s).unwrap();
+    /// let alphabet = Alphabet::from_string(s);
     /// assert!(alphabet.contains('a'));
-    /// assert_eq!(alphabet.index('b'), Some(1));
+    /// assert_eq!(alphabet.index('b'), Some(2));
     /// assert_eq!(alphabet.len(), 3);
     /// ```
-    pub fn from_string(s: &str) -> Result<Alphabet, Box<dyn std::error::Error>> {
+    pub fn from_string(s: &str) -> Alphabet {
         let chars: Vec<char> = s.chars().collect();
         Alphabet::new(&chars)
     }
@@ -92,15 +88,22 @@ impl Alphabet {
     /// use stralg::utils::Alphabet;
     ///
     /// let chars = vec!['a', 'b', 'c'];
-    /// let alphabet = Alphabet::new(&chars).unwrap();
-    /// let translated = alphabet.translate("abc").unwrap();
-    /// assert_eq!(translated.to_vec(), vec![0, 1, 2]);
+    /// let alphabet = Alphabet::new(&chars);
+    /// let translated = alphabet.translate::<u8>("abc").unwrap();
+    /// assert_eq!(translated.to_vec(), vec![1, 2, 3]);
     /// ```
-    pub fn translate(&self, s: &str) -> Result<CharArray, Box<dyn std::error::Error>> {
-        match self {
-            Alphabet::U8(impl_) => impl_.translate(s).map(CharArray::U8),
-            Alphabet::U16(impl_) => impl_.translate(s).map(CharArray::U16),
-        }
+    pub fn translate<C>(&self, s: &str) -> Result<Vec<C>, Box<dyn std::error::Error>>
+    where
+        C: TryFrom<usize> + Copy,
+        <C as TryFrom<usize>>::Error: std::fmt::Debug,
+    {
+        s.chars()
+            .map(|c| {
+                self.index(c)
+                    .ok_or_else(|| "Character not in alphabet".into())
+                    .and_then(|idx| C::try_from(idx).map_err(|_| "Index conversion failed".into()))
+            })
+            .collect()
     }
 
     /// Translates a vector of character indices back into a string.
@@ -116,19 +119,26 @@ impl Alphabet {
     /// # Examples
     ///
     /// ```
-    /// use stralg::utils::{Alphabet, CharArray};
+    /// use stralg::utils::Alphabet;
     ///
     /// let chars = vec!['a', 'b', 'c'];
-    /// let alphabet = Alphabet::new(&chars).unwrap();
-    /// let translated = alphabet.translate("abc").unwrap();
+    /// let alphabet = Alphabet::new(&chars);
+    /// let translated = alphabet.translate::<u8>("abc").unwrap();
     /// let s = alphabet.as_string(&translated).unwrap();
     /// assert_eq!(s, "abc");
     /// ```
-    pub fn as_string(&self, array: &CharArray) -> Result<String, Box<dyn std::error::Error>> {
-        match self {
-            Alphabet::U8(impl_) => impl_.as_string(array.to_u8().unwrap()),
-            Alphabet::U16(impl_) => impl_.as_string(array.to_u16().unwrap()),
-        }
+    pub fn as_string<C>(&self, vec: &Vec<C>) -> Result<String, Box<dyn std::error::Error>>
+    where
+        C: Into<usize> + Copy,
+    {
+        vec.iter()
+            .map(|&c| {
+                self.chars
+                    .get(c.into() - 1) // -1 to compensate for zero sentinel
+                    .ok_or_else(|| "Index out of bounds".into())
+            })
+            .collect::<Result<Vec<_>, _>>()
+            .map(|chars| chars.into_iter().collect())
     }
     /// Checks if the alphabet contains the given character.
     ///
@@ -146,15 +156,12 @@ impl Alphabet {
     /// use stralg::utils::Alphabet;
     ///
     /// let chars = vec!['a', 'b', 'c'];
-    /// let alphabet = Alphabet::new(&chars).unwrap();
+    /// let alphabet = Alphabet::new(&chars);
     /// assert!(alphabet.contains('a'));
     /// assert!(!alphabet.contains('d'));
     /// ```
     pub fn contains(&self, c: char) -> bool {
-        match self {
-            Alphabet::U8(impl_) => impl_.contains(c),
-            Alphabet::U16(impl_) => impl_.contains(c),
-        }
+        self.indices.contains_key(&c)
     }
 
     /// Returns the index of the given character in the alphabet.
@@ -173,15 +180,12 @@ impl Alphabet {
     /// use stralg::utils::Alphabet;
     ///
     /// let chars = vec!['a', 'b', 'c'];
-    /// let alphabet = Alphabet::new(&chars).unwrap();
-    /// assert_eq!(alphabet.index('b'), Some(1));
+    /// let alphabet = Alphabet::new(&chars);
+    /// assert_eq!(alphabet.index('b'), Some(2));
     /// assert_eq!(alphabet.index('d'), None);
     /// ```
     pub fn index(&self, c: char) -> Option<usize> {
-        match self {
-            Alphabet::U8(impl_) => impl_.index(c).map(|i| i as usize),
-            Alphabet::U16(impl_) => impl_.index(c).map(|i| i as usize),
-        }
+        self.indices.get(&c).copied()
     }
 
     /// Returns the number of characters in the alphabet.
@@ -199,147 +203,10 @@ impl Alphabet {
     /// use stralg::utils::Alphabet;
     ///
     /// let chars = vec!['a', 'b', 'c'];
-    /// let alphabet = Alphabet::new(&chars).unwrap();
+    /// let alphabet = Alphabet::new(&chars);
     /// assert_eq!(alphabet.len(), 3);
     /// ```
     pub fn len(&self) -> usize {
-        match self {
-            Alphabet::U8(impl_) => impl_.len(),
-            Alphabet::U16(impl_) => impl_.len(),
-        }
-    }
-}
-
-pub struct AlphabetImpl<T> {
-    chars: Vec<char>,
-    indices: HashMap<char, T>,
-}
-
-impl<T> AlphabetImpl<T>
-where
-    T: Copy + TryFrom<usize> + Into<usize>,
-{
-    fn new(chars: &[char]) -> Result<AlphabetImpl<T>, T::Error> {
-        let mut sorted_chars = chars.to_vec();
-        sorted_chars.sort_unstable();
-        let mut indices = HashMap::new();
-        for (i, &c) in sorted_chars.iter().enumerate() {
-            indices.insert(c, T::try_from(i)?);
-        }
-        Ok(AlphabetImpl {
-            chars: sorted_chars,
-            indices,
-        })
-    }
-
-    fn contains(&self, c: char) -> bool {
-        self.indices.contains_key(&c)
-    }
-
-    fn index(&self, c: char) -> Option<T> {
-        self.indices.get(&c).copied()
-    }
-
-    fn len(&self) -> usize {
         self.chars.len()
-    }
-
-    fn translate(&self, s: &str) -> Result<Vec<T>, Box<dyn std::error::Error>> {
-        s.chars()
-            .map(|c| {
-                self.index(c)
-                    .ok_or_else(|| format!("Character '{}' not found in alphabet", c).into())
-            })
-            .collect()
-    }
-
-    fn as_string(&self, array: &[T]) -> Result<String, Box<dyn std::error::Error>> {
-        let mut result = String::new();
-        for &index in array {
-            let index: usize = index.into();
-            if index < self.chars.len() {
-                result.push(self.chars[index]);
-            } else {
-                return Err(format!("Index '{}' out of bounds", index).into());
-            }
-        }
-        Ok(result)
-    }
-}
-
-impl CharArray {
-    pub fn from_string(
-        s: &str,
-        alphabet: &Alphabet,
-    ) -> Result<CharArray, Box<dyn std::error::Error>> {
-        alphabet.translate(s)
-    }
-
-    pub fn len(&self) -> usize {
-        match self {
-            CharArray::U8(vec) => vec.len(),
-            CharArray::U16(vec) => vec.len(),
-        }
-    }
-
-    pub fn to_vec(&self) -> Vec<usize> {
-        match self {
-            CharArray::U8(vec) => vec.iter().map(|&x| x as usize).collect(),
-            CharArray::U16(vec) => vec.iter().map(|&x| x as usize).collect(),
-        }
-    }
-
-    pub fn to_u8(&self) -> Option<&[u8]> {
-        match self {
-            CharArray::U8(vec) => Some(vec),
-            _ => None,
-        }
-    }
-
-    pub fn to_u16(&self) -> Option<&[u16]> {
-        match self {
-            CharArray::U16(vec) => Some(vec),
-            _ => None,
-        }
-    }
-}
-
-impl std::ops::Index<usize> for CharArray {
-    type Output = usize;
-
-    fn index(&self, index: usize) -> Self::Output {
-        match self {
-            CharArray::U8(vec) => vec[index] as usize,
-            CharArray::U16(vec) => vec[index] as usize,
-        }
-    }
-}
-
-/*
-impl std::ops::IndexMut<usize> for CharArray {
-    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
-        match self {
-            CharArray::U8(vec) => &mut vec[index],
-            CharArray::U16(vec) => &mut vec[index],
-        }
-    }
-}
-*/
-
-impl std::fmt::Debug for CharArray {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            CharArray::U8(vec) => vec.fmt(f),
-            CharArray::U16(vec) => vec.fmt(f),
-        }
-    }
-}
-
-impl std::fmt::Display for CharArray {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            CharArray::U8(vec) => vec.fmt(f),
-            CharArray::U16(vec) => vec.fmt(f),
-        }
     }
 }

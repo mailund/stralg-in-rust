@@ -1,4 +1,36 @@
-use crate::{Alphabet, CharArray};
+use crate::Alphabet;
+
+struct NaiveSearch {
+    x: Vec<u8>,
+    p: Option<Vec<u8>>,
+    i: usize,
+}
+
+impl Iterator for NaiveSearch {
+    type Item = usize;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let NaiveSearch { x, p, i } = self;
+        let p = match p {
+            Some(p) => p,
+            None => return None,
+        };
+
+        let n = x.len();
+        let m = p.len();
+        while *i <= n - m {
+            let mut k = 0;
+            while k < m && p[k] == x[*i + k] {
+                k += 1;
+            }
+            *i += 1;
+            if k == m {
+                return Some(*i - 1);
+            }
+        }
+        None
+    }
+}
 
 /// Returns an iterator over the starting indices of occurrences of the pattern
 /// `p` in the text `x` using the naive string matching algorithm.
@@ -50,21 +82,9 @@ use crate::{Alphabet, CharArray};
 /// assert_eq!(matches, vec![2]);
 /// ```
 pub fn naive(x: &str, p: &str) -> impl Iterator<Item = usize> {
-    // Converting the strings to Vec<char> to get random access to unicode strings
-    let alphabet = Alphabet::from_string(x).unwrap();
-    let x = CharArray::from_string(x, &alphabet).unwrap();
-    match CharArray::from_string(p, &alphabet) {
-        Err(_) => return std::iter::empty(),
-        Ok(p) => (),
-    }
-
-    let n = x.len();
-    let m = p.len();
-    (0..=n - m).filter(move |&i| {
-        let mut j = 0;
-        while j < m && x[i + j] == p[j] {
-            j += 1;
-        }
-        j == m
-    })
+    let alpha = Alphabet::from_string(x);
+    let x: Vec<u8> = alpha.translate(x).unwrap();
+    let p = alpha.translate::<u8>(p).ok();
+    let i = 0;
+    NaiveSearch { x, p, i }
 }
