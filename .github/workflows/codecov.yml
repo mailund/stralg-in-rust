@@ -31,8 +31,13 @@ jobs:
       - name: Verify coverage file
         run: ls -l cobertura.xml || echo "Coverage file not found!"
 
-      - name: Upload coverage reports to Codecov
+      - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
-            token: ${{ secrets.CODECOV_TOKEN }}
-            slug: mailund/stralg-in-rust
+          files: ./cobertura.xml
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: true
+          token: ${{ secrets.CODECOV_TOKEN }}
+          slug: mailund/stralg-in-rust
+      
