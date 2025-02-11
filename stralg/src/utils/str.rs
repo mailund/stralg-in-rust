@@ -1,19 +1,19 @@
-use super::{AlphabetChar, SizedAlphabet};
+use super::{Alphabet, CharacterTrait, SizedAlphabet};
 use std::rc::Rc;
 
 /// A string type that uses a custom alphabet for character encoding.
-pub struct Str<Char: AlphabetChar> {
+pub struct Str<Char: CharacterTrait> {
     pub alphabet: Rc<SizedAlphabet<Char>>,
-    chars: Vec<Char>,
+    char_vector: Vec<Char>,
 }
 
-impl<Char: AlphabetChar> Str<Char> {
+impl<Char: CharacterTrait> Str<Char> {
     /// Creates a new `Str` from a given alphabet and a vector of characters.
     ///
     /// # Arguments
     ///
     /// * `alphabet` - A reference-counted pointer to the alphabet.
-    /// * `chars` - A vector of characters.
+    /// * `x` - A vector of characters.
     ///
     /// # Returns
     ///
@@ -25,17 +25,17 @@ impl<Char: AlphabetChar> Str<Char> {
     /// use stralg::utils::{SizedAlphabet, Str};
     /// use std::rc::Rc;
     ///
-    /// let alphabet = Rc::new(SizedAlphabet::new(&['a', 'b', 'c']));
+    /// let alphabet = Rc::new(SizedAlphabet::new(&['a', 'b', 'c']).unwrap());
     /// let chars = vec![1u8, 2, 3];
     /// let s = Str::new(&alphabet, chars);
     /// assert_eq!(s[0], 1);
     /// assert_eq!(s[1], 2);
     /// assert_eq!(s[2], 3);
     /// ```
-    pub fn new(alphabet: &Rc<SizedAlphabet<Char>>, chars: Vec<Char>) -> Self {
+    pub fn new(alphabet: &Rc<SizedAlphabet<Char>>, x: Vec<Char>) -> Self {
         Self {
             alphabet: alphabet.clone(),
-            chars,
+            char_vector: x,
         }
     }
 
@@ -60,9 +60,8 @@ impl<Char: AlphabetChar> Str<Char> {
     /// assert_eq!(s[2], 3);
     /// ```
     pub fn from_str(s: &str) -> Result<Self, Box<dyn std::error::Error>> {
-        let alphabet = Rc::new(SizedAlphabet::from_str(s));
-        let chars = alphabet.translate(s)?;
-        Ok(Self::new(&alphabet, chars))
+        let alphabet: Rc<SizedAlphabet<Char>> = Rc::new(SizedAlphabet::from_str(s)?);
+        Self::from_str_with_alphabet(s, &alphabet)
     }
 
     /// Creates a new `Str` from a string slice and a given alphabet.
@@ -82,7 +81,7 @@ impl<Char: AlphabetChar> Str<Char> {
     /// use stralg::utils::{SizedAlphabet, Str};
     /// use std::rc::Rc;
     ///
-    /// let alphabet = Rc::new(SizedAlphabet::new(&['a', 'b', 'c']));
+    /// let alphabet = Rc::new(SizedAlphabet::new(&['a', 'b', 'c']).unwrap());
     /// let s = Str::<u8>::from_str_with_alphabet("abc", &alphabet).unwrap();
     /// assert_eq!(s[0], 1);
     /// assert_eq!(s[1], 2);
@@ -92,8 +91,18 @@ impl<Char: AlphabetChar> Str<Char> {
         s: &str,
         alphabet: &Rc<SizedAlphabet<Char>>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
-        let chars = alphabet.translate(s)?;
-        Ok(Self::new(alphabet, chars))
+        let x = s
+            .chars()
+            .map(|c| {
+                alphabet
+                    .index(c)
+                    .ok_or_else(|| "Character not in alphabet".into())
+                    .and_then(|idx| {
+                        Char::try_from(idx).map_err(|_| "Index conversion failed".into())
+                    })
+            })
+            .collect::<Result<Vec<Char>, Box<dyn std::error::Error>>>()?;
+        Ok(Self::new(&alphabet, x))
     }
 
     /// Creates a new `Str` from a string slice using the same alphabet
@@ -114,22 +123,42 @@ impl<Char: AlphabetChar> Str<Char> {
     /// use stralg::utils::{SizedAlphabet, Str};
     /// use std::rc::Rc;
     ///
-    /// let alphabet = Rc::new(SizedAlphabet::new(&['a', 'b', 'c']));
+    /// let alphabet = Rc::new(SizedAlphabet::new(&['a', 'b', 'c']).unwrap());
     /// let chars = vec![1u8, 2, 3];
     /// let s1 = Str::new(&alphabet, chars);
-    /// let s2 = s1.to_shared_alphabet("abc").unwrap();
+    /// let s2 = s1.translate_to_this_alphabet("abc").unwrap();
     /// assert_eq!(s2[0], 1);
     /// assert_eq!(s2[1], 2);
     /// assert_eq!(s2[2], 3);
     /// ```
-    pub fn to_shared_alphabet(&self, s: &str) -> Result<Self, Box<dyn std::error::Error>> {
+    pub fn translate_to_this_alphabet(&self, s: &str) -> Result<Self, Box<dyn std::error::Error>> {
         let alphabet = self.alphabet.clone();
-        let chars = alphabet.translate(s)?;
-        Ok(Self::new(&alphabet, chars))
+        Self::from_str_with_alphabet(s, &alphabet)
+    }
+
+    /// Returns the length of the string.
+    ///
+    /// # Returns
+    ///
+    /// The length of the string.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use stralg::utils::{SizedAlphabet, Str};
+    /// use std::rc::Rc;
+    ///
+    /// let alphabet = Rc::new(SizedAlphabet::new(&['a', 'b', 'c']).unwrap());
+    /// let chars = vec![1u8, 2, 3];
+    /// let s = Str::new(&alphabet, chars);
+    /// assert_eq!(s.len(), 3);
+    /// ```
+    pub fn len(&self) -> usize {
+        self.char_vector.len()
     }
 }
 
-impl<Char: AlphabetChar> std::ops::Index<usize> for Str<Char>
+impl<Char: CharacterTrait> std::ops::Index<usize> for Str<Char>
 where
     Char: TryFrom<usize> + Copy,
     <Char as TryFrom<usize>>::Error: std::fmt::Debug,
@@ -137,16 +166,16 @@ where
     type Output = Char;
 
     fn index(&self, index: usize) -> &Self::Output {
-        &self.chars[index]
+        &self.char_vector[index]
     }
 }
 
-impl<Char: AlphabetChar> std::ops::IndexMut<usize> for Str<Char>
+impl<Char: CharacterTrait> std::ops::IndexMut<usize> for Str<Char>
 where
     Char: TryFrom<usize> + Copy,
     <Char as TryFrom<usize>>::Error: std::fmt::Debug,
 {
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
-        &mut self.chars[index]
+        &mut self.char_vector[index]
     }
 }

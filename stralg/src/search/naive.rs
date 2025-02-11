@@ -1,8 +1,8 @@
-use crate::SizedAlphabet;
+use crate::utils::{Alphabet, SizedAlphabet, Str};
 
 struct NaiveSearch {
-    x: Vec<u8>,
-    p: Option<Vec<u8>>,
+    x: Str<u8>,
+    p: Option<Str<u8>>,
     i: usize,
 }
 
@@ -82,9 +82,9 @@ impl Iterator for NaiveSearch {
 /// assert_eq!(matches, vec![2]);
 /// ```
 pub fn naive(x: &str, p: &str) -> impl Iterator<Item = usize> {
-    let alpha = SizedAlphabet::<u8>::from_str(x);
-    let x: Vec<u8> = alpha.translate(x).unwrap();
-    let p = alpha.translate(p).ok();
+    // FIXME: pick size of alphabet based on input
+    let x = Str::<u8>::from_str(x).unwrap();
+    let p = x.translate_to_this_alphabet(p).ok();
     let i = 0;
     NaiveSearch { x, p, i }
 }
