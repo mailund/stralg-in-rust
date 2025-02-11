@@ -103,6 +103,38 @@ where
         let chars = alphabet.translate::<Char>(s)?;
         Ok(Self::new(alphabet, chars))
     }
+
+    /// Creates a new `Str` from a string slice using the same alphabet
+    /// as the current `Str`. This maps the  two strings to the same string-space,
+    /// so they can be manipulated together.
+    ///
+    /// # Arguments
+    ///
+    /// * `s` - A string slice to convert.
+    ///
+    /// # Returns
+    ///
+    /// A new `Str` instance.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use stralg::utils::{Alphabet, Str};
+    /// use std::rc::Rc;
+    ///
+    /// let alphabet = Rc::new(Alphabet::new(&['a', 'b', 'c']));
+    /// let chars = vec![1u8, 2, 3];
+    /// let s1 = Str::new(&alphabet, chars);
+    /// let s2 = s1.to_shared_alphabet("abc").unwrap();
+    /// assert_eq!(s2[0], 1);
+    /// assert_eq!(s2[1], 2);
+    /// assert_eq!(s2[2], 3);
+    /// ```
+    pub fn to_shared_alphabet(&self, s: &str) -> Result<Self, Box<dyn std::error::Error>> {
+        let alphabet = self.alphabet.clone();
+        let chars = alphabet.translate::<Char>(s)?;
+        Ok(Self::new(&alphabet, chars))
+    }
 }
 
 impl<Char> std::ops::Index<usize> for Str<Char>
