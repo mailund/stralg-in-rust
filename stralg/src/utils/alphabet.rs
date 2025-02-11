@@ -5,13 +5,13 @@ use std::collections::HashMap;
 /// This is predominantly used for mapping UTF-8 str strings to vectors where we have
 /// constant time access to the characters, without relying on a Vec<char> which would take
 /// up four bytes per character.
-pub struct Alphabet {
+pub struct SizedAlphabet {
     chars: Vec<char>,
     indices: HashMap<char, usize>,
 }
 
-impl Alphabet {
-    /// Creates a new `Alphabet` from a slice of characters.
+impl SizedAlphabet {
+    /// Creates a new `SizedAlphabet` from a slice of characters.
     ///
     /// # Arguments
     ///
@@ -19,32 +19,32 @@ impl Alphabet {
     ///
     /// # Returns
     ///
-    /// An `Alphabet` containing the given characters and their corresponding indices.
+    /// A `SizedAlphabet` containing the given characters and their corresponding indices.
     ///
     /// # Examples
     ///
     /// ```
-    /// use stralg::utils::Alphabet;
+    /// use stralg::utils::SizedAlphabet;
     ///
     /// let chars = vec!['a', 'b', 'c'];
-    /// let alphabet = Alphabet::new(&chars);
+    /// let alphabet = SizedAlphabet::new(&chars);
     /// assert!(alphabet.contains('a'));
     /// assert_eq!(alphabet.index('b'), Some(2));
     /// assert_eq!(alphabet.len(), 3);
     /// ```
-    pub fn new(chars: &[char]) -> Alphabet {
+    pub fn new(chars: &[char]) -> SizedAlphabet {
         let len = chars.len();
         let mut indices = HashMap::with_capacity(len);
         for (i, &c) in chars.iter().enumerate() {
             indices.insert(c, i + 1); // The +1 is to leave room for the sentinel at zero
         }
-        Alphabet {
+        SizedAlphabet {
             chars: chars.to_vec(),
             indices,
         }
     }
 
-    /// Creates a new `Alphabet` from a string.
+    /// Creates a new `SizedAlphabet` from a string.
     ///
     /// The alphabet will contain the characters in the string plus zero as a sentinel.
     ///
@@ -54,22 +54,22 @@ impl Alphabet {
     ///
     /// # Returns
     ///
-    /// An `Alphabet` containing the characters in the string and their corresponding indices.
+    /// A `SizedAlphabet` containing the characters in the string and their corresponding indices.
     ///
     /// # Examples
     ///
     /// ```
-    /// use stralg::utils::Alphabet;
+    /// use stralg::utils::SizedAlphabet;
     ///
     /// let s = "abc";
-    /// let alphabet = Alphabet::from_str(s);
+    /// let alphabet = SizedAlphabet::from_str(s);
     /// assert!(alphabet.contains('a'));
     /// assert_eq!(alphabet.index('b'), Some(2));
     /// assert_eq!(alphabet.len(), 3);
     /// ```
-    pub fn from_str(s: &str) -> Alphabet {
+    pub fn from_str(s: &str) -> SizedAlphabet {
         let chars: Vec<char> = s.chars().collect();
-        Alphabet::new(&chars)
+        SizedAlphabet::new(&chars)
     }
 
     /// Translates a string slice into a vector of the underlying type in the implementation.
@@ -85,10 +85,10 @@ impl Alphabet {
     /// # Examples
     ///
     /// ```
-    /// use stralg::utils::Alphabet;
+    /// use stralg::utils::SizedAlphabet;
     ///
     /// let chars = vec!['a', 'b', 'c'];
-    /// let alphabet = Alphabet::new(&chars);
+    /// let alphabet = SizedAlphabet::new(&chars);
     /// let translated = alphabet.translate::<u8>("abc").unwrap();
     /// assert_eq!(translated.to_vec(), vec![1, 2, 3]);
     /// ```
@@ -110,7 +110,7 @@ impl Alphabet {
     ///
     /// # Arguments
     ///
-    /// * `array` - A `CharArray` containing the indices to translate.
+    /// * `vec` - A `Vec<C>` containing the indices to translate.
     ///
     /// # Returns
     ///
@@ -119,10 +119,10 @@ impl Alphabet {
     /// # Examples
     ///
     /// ```
-    /// use stralg::utils::Alphabet;
+    /// use stralg::utils::SizedAlphabet;
     ///
     /// let chars = vec!['a', 'b', 'c'];
-    /// let alphabet = Alphabet::new(&chars);
+    /// let alphabet = SizedAlphabet::new(&chars);
     /// let translated = alphabet.translate::<u8>("abc").unwrap();
     /// let s = alphabet.as_string(&translated).unwrap();
     /// assert_eq!(s, "abc");
@@ -153,10 +153,10 @@ impl Alphabet {
     /// # Examples
     ///
     /// ```
-    /// use stralg::utils::Alphabet;
+    /// use stralg::utils::SizedAlphabet;
     ///
     /// let chars = vec!['a', 'b', 'c'];
-    /// let alphabet = Alphabet::new(&chars);
+    /// let alphabet = SizedAlphabet::new(&chars);
     /// assert!(alphabet.contains('a'));
     /// assert!(!alphabet.contains('d'));
     /// ```
@@ -177,10 +177,10 @@ impl Alphabet {
     /// # Examples
     ///
     /// ```
-    /// use stralg::utils::Alphabet;
+    /// use stralg::utils::SizedAlphabet;
     ///
     /// let chars = vec!['a', 'b', 'c'];
-    /// let alphabet = Alphabet::new(&chars);
+    /// let alphabet = SizedAlphabet::new(&chars);
     /// assert_eq!(alphabet.index('b'), Some(2));
     /// assert_eq!(alphabet.index('d'), None);
     /// ```
@@ -200,10 +200,10 @@ impl Alphabet {
     /// # Examples
     ///
     /// ```
-    /// use stralg::utils::Alphabet;
+    /// use stralg::utils::SizedAlphabet;
     ///
     /// let chars = vec!['a', 'b', 'c'];
-    /// let alphabet = Alphabet::new(&chars);
+    /// let alphabet = SizedAlphabet::new(&chars);
     /// assert_eq!(alphabet.len(), 3);
     /// ```
     pub fn len(&self) -> usize {

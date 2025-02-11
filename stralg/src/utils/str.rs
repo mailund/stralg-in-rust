@@ -1,4 +1,4 @@
-use super::Alphabet;
+use super::SizedAlphabet;
 use std::rc::Rc;
 
 /// A string type that uses a custom alphabet for character encoding.
@@ -7,7 +7,7 @@ where
     Char: TryFrom<usize> + Copy,
     <Char as TryFrom<usize>>::Error: std::fmt::Debug,
 {
-    pub alphabet: Rc<Alphabet>,
+    pub alphabet: Rc<SizedAlphabet>,
     chars: Vec<Char>,
 }
 
@@ -30,17 +30,17 @@ where
     /// # Examples
     ///
     /// ```
-    /// use stralg::utils::{Alphabet, Str};
+    /// use stralg::utils::{SizedAlphabet, Str};
     /// use std::rc::Rc;
     ///
-    /// let alphabet = Rc::new(Alphabet::new(&['a', 'b', 'c']));
+    /// let alphabet = Rc::new(SizedAlphabet::new(&['a', 'b', 'c']));
     /// let chars = vec![1u8, 2, 3];
     /// let s = Str::new(&alphabet, chars);
     /// assert_eq!(s[0], 1);
     /// assert_eq!(s[1], 2);
     /// assert_eq!(s[2], 3);
     /// ```
-    pub fn new(alphabet: &Rc<Alphabet>, chars: Vec<Char>) -> Self {
+    pub fn new(alphabet: &Rc<SizedAlphabet>, chars: Vec<Char>) -> Self {
         Self {
             alphabet: alphabet.clone(),
             chars,
@@ -68,7 +68,7 @@ where
     /// assert_eq!(s[2], 3);
     /// ```
     pub fn from_str(s: &str) -> Result<Self, Box<dyn std::error::Error>> {
-        let alphabet = Rc::new(Alphabet::from_str(s));
+        let alphabet = Rc::new(SizedAlphabet::from_str(s));
         let chars = alphabet.translate::<Char>(s)?;
         Ok(Self::new(&alphabet, chars))
     }
@@ -87,10 +87,10 @@ where
     /// # Examples
     ///
     /// ```
-    /// use stralg::utils::{Alphabet, Str};
+    /// use stralg::utils::{SizedAlphabet, Str};
     /// use std::rc::Rc;
     ///
-    /// let alphabet = Rc::new(Alphabet::new(&['a', 'b', 'c']));
+    /// let alphabet = Rc::new(SizedAlphabet::new(&['a', 'b', 'c']));
     /// let s = Str::<u8>::from_str_with_alphabet("abc", &alphabet).unwrap();
     /// assert_eq!(s[0], 1);
     /// assert_eq!(s[1], 2);
@@ -98,7 +98,7 @@ where
     /// ```
     pub fn from_str_with_alphabet(
         s: &str,
-        alphabet: &Rc<Alphabet>,
+        alphabet: &Rc<SizedAlphabet>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let chars = alphabet.translate::<Char>(s)?;
         Ok(Self::new(alphabet, chars))
@@ -119,10 +119,10 @@ where
     /// # Examples
     ///
     /// ```
-    /// use stralg::utils::{Alphabet, Str};
+    /// use stralg::utils::{SizedAlphabet, Str};
     /// use std::rc::Rc;
     ///
-    /// let alphabet = Rc::new(Alphabet::new(&['a', 'b', 'c']));
+    /// let alphabet = Rc::new(SizedAlphabet::new(&['a', 'b', 'c']));
     /// let chars = vec![1u8, 2, 3];
     /// let s1 = Str::new(&alphabet, chars);
     /// let s2 = s1.to_shared_alphabet("abc").unwrap();
