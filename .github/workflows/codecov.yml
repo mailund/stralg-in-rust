@@ -1,6 +1,8 @@
 name: CI
 
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
 
 jobs:
   test:
@@ -8,25 +10,27 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Install Rust
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
           override: true
+          components: llvm-tools-preview
+
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y lcov
 
       - name: Run tests with coverage
         run: |
-          sudo apt-get install -y lcov
-          cargo install cargo-tarpaulin
-          cargo tarpaulin --out Xml
+          cargo install cargo-tarpaulin --locked
+          cargo tarpaulin --verbose --timeout 120 --out Xml
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
-          files: ./coverage.xml
+          files: ./cobertura.xml
           flags: unittests
           name: codecov-umbrella
           fail_ci_if_error: true
-
