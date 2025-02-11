@@ -1,3 +1,5 @@
+use crate::{Alphabet, CharArray};
+
 /// Returns an iterator over the starting indices of occurrences of the pattern
 /// `p` in the text `x` using the naive string matching algorithm.
 ///
@@ -49,8 +51,13 @@
 /// ```
 pub fn naive(x: &str, p: &str) -> impl Iterator<Item = usize> {
     // Converting the strings to Vec<char> to get random access to unicode strings
-    let x: Vec<char> = x.chars().collect();
-    let p: Vec<char> = p.chars().collect();
+    let alphabet = Alphabet::from_string(x).unwrap();
+    let x = CharArray::from_string(x, &alphabet).unwrap();
+    match CharArray::from_string(p, &alphabet) {
+        Err(_) => return std::iter::empty(),
+        Ok(p) => (),
+    }
+
     let n = x.len();
     let m = p.len();
     (0..=n - m).filter(move |&i| {

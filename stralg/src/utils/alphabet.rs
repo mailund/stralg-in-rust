@@ -268,6 +268,20 @@ where
 }
 
 impl CharArray {
+    pub fn from_string(
+        s: &str,
+        alphabet: &Alphabet,
+    ) -> Result<CharArray, Box<dyn std::error::Error>> {
+        alphabet.translate(s)
+    }
+
+    pub fn len(&self) -> usize {
+        match self {
+            CharArray::U8(vec) => vec.len(),
+            CharArray::U16(vec) => vec.len(),
+        }
+    }
+
     pub fn to_vec(&self) -> Vec<usize> {
         match self {
             CharArray::U8(vec) => vec.iter().map(|&x| x as usize).collect(),
@@ -289,6 +303,28 @@ impl CharArray {
         }
     }
 }
+
+impl std::ops::Index<usize> for CharArray {
+    type Output = usize;
+
+    fn index(&self, index: usize) -> Self::Output {
+        match self {
+            CharArray::U8(vec) => vec[index] as usize,
+            CharArray::U16(vec) => vec[index] as usize,
+        }
+    }
+}
+
+/*
+impl std::ops::IndexMut<usize> for CharArray {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        match self {
+            CharArray::U8(vec) => &mut vec[index],
+            CharArray::U16(vec) => &mut vec[index],
+        }
+    }
+}
+*/
 
 impl std::fmt::Debug for CharArray {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
