@@ -1,12 +1,43 @@
 use super::{Alphabet, CharSize, CharacterTrait};
 use std::rc::Rc;
 
+/// A string mapper that uses a custom alphabet for character encoding.
+///
+/// This enum is used to select the correct mapper, and the underlying character type (u8 or u16).
+///
 pub enum StrMappers {
+    /// Mapping to u8 characters
     U8Mapper(StrMapper<u8>),
+    /// Mapping to u16 characters
     U16Mapper(StrMapper<u16>),
 }
 
 impl StrMappers {
+    /// Creates a new `StrMappers` instance from a given alphabet.
+    ///
+    /// When picking a mapper, the character type is selected based on the size of the alphabet.
+    ///
+    /// # Arguments
+    ///
+    /// * `alphabet` - A reference-counted pointer to the alphabet.
+    ///
+    /// # Returns
+    ///
+    /// A new `StrMappers` instance.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use stralg::utils::{Alphabet, StrMappers};
+    /// use std::rc::Rc;
+    ///
+    /// let alphabet = Rc::new(Alphabet::from_str("abc"));
+    /// let mapper = StrMappers::new(&alphabet);
+    /// match mapper {
+    ///    StrMappers::U8Mapper(_) => (),
+    ///   _ => panic!("Expected StrMapper::U8"),
+    /// }
+    /// ```
     pub fn new(alphabet: &Rc<Alphabet>) -> Self {
         use CharSize::*;
         use StrMappers::*;
@@ -16,21 +47,59 @@ impl StrMappers {
         }
     }
 
+    /// Creates a new `StrMappers` instance from a string slice.
+    ///
+    /// This is a convenience method that creates an alphabet from the string slice.
+    ///
+    /// # Arguments
+    ///
+    /// * `s` - A string slice to convert.
+    ///
+    /// # Returns
+    ///
+    /// A new `StrMappers` instance.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use stralg::utils::StrMappers;
+    /// let mapper = StrMappers::new_from_str("abc").unwrap();
+    /// ```
     pub fn new_from_str(s: &str) -> Result<Self, Box<dyn std::error::Error>> {
         let alphabet = Rc::new(Alphabet::from_str(s));
         Ok(Self::new(&alphabet))
     }
 
+    /// Creates a new `StrMappers` instance from an array of string slices.
+    ///
+    /// This is a convenience method that creates an alphabet from the array of string slices.
+    ///
+    /// # Arguments
+    ///
+    /// * `strings` - An array of string slices to convert.
+    ///
+    /// # Returns
+    ///
+    /// A new `StrMappers` instance.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use stralg::utils::StrMappers;
+    /// let mapper = StrMappers::new_from_strs(&["abc", "def"]).unwrap();
+    /// ```
     pub fn new_from_strs(strings: &[&str]) -> Result<Self, Box<dyn std::error::Error>> {
         let alphabet = Rc::new(Alphabet::from_strs(strings));
         Ok(Self::new(&alphabet))
     }
 }
 
+/// A string mapper that uses a custom alphabet for character encoding.
 pub struct StrMapper<Char>
 where
     Char: CharacterTrait,
 {
+    /// The alphabet used for character encoding.
     pub alphabet: Rc<Alphabet>,
     _phantom: std::marker::PhantomData<Char>,
 }
@@ -39,6 +108,15 @@ impl<Char> StrMapper<Char>
 where
     Char: CharacterTrait,
 {
+    /// Creates a new `StrMapper` from a given alphabet.
+    ///
+    /// # Arguments
+    ///
+    /// * `alphabet` - A reference-counted pointer to the alphabet.
+    ///
+    /// # Returns
+    ///
+    /// A new `StrMapper` instance.
     pub(self) fn new(alphabet: &Rc<Alphabet>) -> Self {
         Self {
             alphabet: alphabet.clone(),
@@ -46,6 +124,19 @@ where
         }
     }
 
+    /// Maps a string to a vector of characters using the alphabet.
+    ///
+    /// # Arguments
+    ///
+    /// * `s` - A string slice to convert.
+    ///
+    /// # Returns
+    ///
+    /// A vector of characters.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the string contains characters not in the alphabet.
     pub fn map_str(&self, s: &str) -> Result<Str<Char>, Box<dyn std::error::Error>> {
         let char_vector = self.alphabet.map_str::<Char>(s)?;
         Ok(Str::new(char_vector, &self.alphabet))
