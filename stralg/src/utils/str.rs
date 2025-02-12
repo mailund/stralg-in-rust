@@ -269,6 +269,10 @@ impl<Char: CharacterTrait> Str<Char> {
     pub fn len(&self) -> usize {
         self.char_vector.len()
     }
+
+    pub fn iter(&self) -> std::slice::Iter<Char> {
+        self.char_vector.iter()
+    }
 }
 
 impl<Char: CharacterTrait> std::ops::Index<usize> for Str<Char>

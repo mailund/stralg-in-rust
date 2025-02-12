@@ -96,7 +96,7 @@ impl<Char: CharacterTrait> Iterator for KMPSearch<Char> {
 /// let matches: Vec<usize> = kmp(text, pattern).collect();
 /// assert_eq!(matches, vec![0, 7]);
 /// ```
-pub fn kmp<'a>(x: &'a str, p: &'a str) -> Box<dyn Iterator<Item = usize>> {
+pub fn kmp(x: &str, p: &str) -> Box<dyn Iterator<Item = usize>> {
     if x.is_empty() || p.is_empty() {
         return Box::new(std::iter::empty());
     }

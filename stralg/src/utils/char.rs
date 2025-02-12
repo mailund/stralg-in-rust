@@ -11,6 +11,9 @@ pub trait CharacterTrait:
     + 'static
 {
     const MAX: usize;
+    fn to_usize(&self) -> usize {
+        (*self).into()
+    }
 }
 impl CharacterTrait for u8 {
     const MAX: usize = u8::MAX as usize - 1; // -1 to leave room for the sentinel

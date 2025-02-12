@@ -1,6 +1,8 @@
+pub mod bmh;
 pub mod kmp;
 pub mod naive;
 
+pub use bmh::bmh;
 pub use kmp::kmp;
 pub use naive::naive;
 
