@@ -15,7 +15,6 @@ struct KMPSearch<Char: CharacterTrait> {
 }
 
 impl<Char: CharacterTrait> KMPSearch<Char> {
-    // FIXME: chage border array to work on Str<Char>
     fn new(x: Str<Char>, p: Str<Char>, ba: Vec<usize>) -> KMPSearch<Char> {
         KMPSearch {
             x,
@@ -34,7 +33,7 @@ impl<Char: CharacterTrait> Iterator for KMPSearch<Char> {
         let KMPSearch {
             x,
             p,
-            ba: b,
+            ba,
             x_index: i,
             p_index: j,
             ..
@@ -46,7 +45,7 @@ impl<Char: CharacterTrait> Iterator for KMPSearch<Char> {
         while *i < n {
             // Shift pattern until it matches the border
             while *j > 0 && &x[*i] != &p[*j] {
-                *j = b[*j - 1];
+                *j = ba[*j - 1];
             }
 
             // Move one step forward (if we can)
@@ -59,7 +58,7 @@ impl<Char: CharacterTrait> Iterator for KMPSearch<Char> {
 
             // Return if a match was found
             if *j == m {
-                *j = b[*j - 1];
+                *j = ba[*j - 1];
                 return Some(*i - m);
             }
         }
@@ -113,11 +112,11 @@ fn kmp_impl<Char>(x: &str, p: &str, mapper: StrMapper<Char>) -> Box<dyn Iterator
 where
     Char: CharacterTrait,
 {
-    let ba = strict_border_array(p);
     let x = mapper.map_str(x).unwrap(); // We built the string from x so this cannot fail...
     let p = match mapper.map_str(p) {
         Ok(p) => p,
         Err(_) => return Box::new(std::iter::empty()),
     };
+    let ba = strict_border_array(&p);
     Box::new(KMPSearch::new(x, p, ba))
 }
