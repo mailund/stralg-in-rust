@@ -1,5 +1,3 @@
-use core::panic;
-
 use crate::utils::{CharacterTrait, Str, StrMapper, StrMappers};
 
 struct BMHSearch<Char>

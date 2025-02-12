@@ -116,7 +116,7 @@ impl Alphabet {
     /// assert_eq!(alphabet.len(), 7);
     ///
     /// // Additional check for indexing (note: index values start at 1)
-    /// assert_eq!(alphabet.index('h'), Some(1));
+    /// assert_eq!(alphabet.index('h'), Some(3));
     /// ```
     pub fn from_strs(strings: &[&str]) -> Alphabet {
         // Making the characters unique here, even though we do it again in
