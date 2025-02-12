@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use super::char::{CharSize, CharacterTrait};
+use std::collections::HashSet;
 
 /// An alphabet we can have strings over.
 ///
@@ -38,15 +39,17 @@ impl Alphabet {
     /// assert_eq!(alphabet.len(), 3);
     /// ```
     pub fn new(chars: &[char]) -> Alphabet {
-        let len = chars.len();
-        let mut indices = HashMap::with_capacity(len);
+        // Turn the chars into the unique chars they contain.
+        let mut seen = HashSet::new();
+        let mut chars: Vec<char> = chars.iter().cloned().filter(|c| seen.insert(*c)).collect();
+        chars.sort_unstable();
+
+        let mut indices = HashMap::with_capacity(chars.len());
         for (i, &c) in chars.iter().enumerate() {
             indices.insert(c, i + 1); // The +1 is to leave room for the sentinel at zero
         }
-        Alphabet {
-            chars: chars.to_vec(),
-            indices,
-        }
+
+        Alphabet { chars, indices }
     }
 
     /// Creates a new `Alphabet` from a string.
@@ -116,10 +119,13 @@ impl Alphabet {
     /// assert_eq!(alphabet.index('h'), Some(1));
     /// ```
     pub fn from_strs(strings: &[&str]) -> Alphabet {
+        // Making the characters unique here, even though we do it again in
+        // Alphabet::new(), just so we don't build a huge Vec<char>.
         let mut chars = Vec::new();
+        let mut seen = HashSet::new();
         for s in strings {
             for c in s.chars() {
-                if !chars.contains(&c) {
+                if seen.insert(c) {
                     chars.push(c);
                 }
             }

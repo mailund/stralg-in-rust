@@ -7,14 +7,14 @@ where
     x: Str<Char>,
     p: Str<Char>,
     i: usize,
-    bad_char_table: [usize; 256], // FIXME: The size must depend on the alphabet size.
+    bad_char_table: Vec<usize>,
 }
 
-fn build_bad_char_table<Char>(p: &Str<Char>) -> [usize; 256]
+fn build_bad_char_table<Char>(p: &Str<Char>) -> Vec<usize>
 where
     Char: CharacterTrait,
 {
-    let mut bad_char_table = [p.len(); 256];
+    let mut bad_char_table = vec![p.len(); p.alphabet.len() + 1];
     for (i, c) in p.iter().enumerate() {
         bad_char_table[c.to_usize()] = i;
     }
@@ -87,5 +87,23 @@ pub fn bmh(x: &str, p: &str) -> Box<dyn Iterator<Item = usize>> {
     match mapper {
         StrMappers::U8Mapper(mapper) => bmh_impl(x, p, mapper),
         StrMappers::U16Mapper(mapper) => bmh_impl(x, p, mapper),
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::{utils::Str, Alphabet};
+    use std::rc::Rc;
+
+    #[test]
+    fn test_bad_charater_table() {
+        let p = "abracadabra"; // len = 11
+        let alphabet = Rc::new(Alphabet::from_str(p)); // $abcdr
+        let p: Str<u8> = Str::from_str(p, &alphabet).unwrap();
+        // Rightmost position of each character in the pattern
+        // $ -> 11, a -> 10, b -> 8, c -> 4, d -> 6, r -> 9
+        let result = build_bad_char_table(&p);
+        assert_eq!(result, vec![11, 10, 8, 4, 6, 9]);
     }
 }

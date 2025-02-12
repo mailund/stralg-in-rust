@@ -108,5 +108,6 @@ mod tests {
     search_tests! {
         naive_tests: naive,
         kmp_tests: kmp,
+        bmh_tests: bmh,
     }
 }
