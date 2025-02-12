@@ -8,33 +8,23 @@ pub use naive::naive;
 mod tests {
     use super::*;
 
-    fn search_01<'a, F, I>(f: F)
-    where
-        F: Fn(&'a str, &'a str) -> I,
-        I: Iterator<Item = usize> + 'a,
-    {
+    type SearchFn<'a> = fn(&'a str, &'a str) -> Box<dyn Iterator<Item = usize> + 'a>;
+
+    fn search_01(f: SearchFn) {
         let x = "abracadabra";
         let p = "abr";
         let result: Vec<usize> = f(x, p).collect();
         assert_eq!(result, vec![0, 7]);
     }
 
-    fn search_02<'a, F, I>(f: F)
-    where
-        F: Fn(&'a str, &'a str) -> I,
-        I: Iterator<Item = usize> + 'a,
-    {
+    fn search_02(f: SearchFn) {
         let x = "aaaaa";
         let p = "aa";
         let result: Vec<usize> = f(x, p).collect();
         assert_eq!(result, vec![0, 1, 2, 3]);
     }
 
-    fn search_03<'a, F, I>(f: F)
-    where
-        F: Fn(&'a str, &'a str) -> I,
-        I: Iterator<Item = usize> + 'a,
-    {
+    fn search_03(f: SearchFn) {
         let x = "hello";
         let p = "ll";
         let result: Vec<usize> = f(x, p).collect();

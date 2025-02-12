@@ -98,6 +98,10 @@ impl Iterator for KMPSearch {
 /// let matches: Vec<usize> = kmp(text, pattern).collect();
 /// assert_eq!(matches, vec![0, 7]);
 /// ```
-pub fn kmp<'a>(x: &'a str, p: &'a str) -> impl Iterator<Item = usize> + 'a {
-    KMPSearch::new(x, p)
+pub fn kmp<'a>(x: &'a str, p: &'a str) -> Box<dyn Iterator<Item = usize>> {
+    if p.len() == 0 {
+        return Box::new(std::iter::empty());
+    }
+
+    Box::new(KMPSearch::new(x, p))
 }

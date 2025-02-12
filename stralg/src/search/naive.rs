@@ -87,18 +87,26 @@ where
 /// let matches: Vec<usize> = naive(text, pattern).collect();
 /// assert_eq!(matches, vec![2]);
 /// ```
-pub fn naive(x: &str, p: &str) -> impl Iterator<Item = usize> {
+pub fn naive(x: &str, p: &str) -> Box<dyn Iterator<Item = usize>> {
+    if p.len() == 0 {
+        return Box::new(std::iter::empty());
+    }
+
     let x = SizedStr::<u8>::from_str(x).unwrap();
-    let p = x.translate_to_this_alphabet(p).ok();
+    let p = match x.translate_to_this_alphabet(p) {
+        Ok(p) => Some(p),
+        Err(_) => return Box::new(std::iter::empty()),
+    };
+
     sized_naive(x, p)
 }
 
-pub fn sized_naive<Char: CharacterTrait>(
+pub fn sized_naive<Char: CharacterTrait + 'static>(
     x: SizedStr<Char>,
     p: Option<SizedStr<Char>>,
-) -> impl Iterator<Item = usize>
+) -> Box<dyn Iterator<Item = usize>>
 where
     <Char as TryFrom<usize>>::Error: std::fmt::Debug,
 {
-    NaiveSearch { x, p, i: 0 }
+    Box::new(NaiveSearch { x, p, i: 0 })
 }
