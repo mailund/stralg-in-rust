@@ -1,11 +1,12 @@
-use crate::utils::{CharacterTrait, SizedStr, Str};
+use crate::utils::{Alphabet, CharacterTrait, Str};
+use std::rc::Rc;
 
 struct NaiveSearch<Char: CharacterTrait>
 where
     <Char as TryFrom<usize>>::Error: std::fmt::Debug, // FIXME: Add this to CharacterTrait
 {
-    x: SizedStr<Char>,
-    p: Option<SizedStr<Char>>,
+    x: Str<Char>,
+    p: Option<Str<Char>>,
     i: usize,
 }
 
@@ -92,7 +93,8 @@ pub fn naive(x: &str, p: &str) -> Box<dyn Iterator<Item = usize>> {
         return Box::new(std::iter::empty());
     }
 
-    let x = SizedStr::<u8>::from_str(x).unwrap();
+    let alphabet = Rc::new(Alphabet::from_str(x));
+    let x = Str::<u8>::from_str(x, &alphabet).unwrap();
     let p = match x.translate_to_this_alphabet(p) {
         Ok(p) => Some(p),
         Err(_) => return Box::new(std::iter::empty()),
@@ -102,8 +104,8 @@ pub fn naive(x: &str, p: &str) -> Box<dyn Iterator<Item = usize>> {
 }
 
 pub fn sized_naive<Char: CharacterTrait + 'static>(
-    x: SizedStr<Char>,
-    p: Option<SizedStr<Char>>,
+    x: Str<Char>,
+    p: Option<Str<Char>>,
 ) -> Box<dyn Iterator<Item = usize>>
 where
     <Char as TryFrom<usize>>::Error: std::fmt::Debug,

@@ -4,5 +4,4 @@ pub mod str;
 
 pub use alphabet::Alphabet;
 pub use char::CharacterTrait;
-pub use str::SizedStr;
 pub use str::Str;

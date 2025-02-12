@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use super::CharacterTrait;
+
 /// An alphabet we can have strings over.
 ///
 /// This is predominantly used for mapping UTF-8 str strings to vectors where we have
@@ -192,5 +194,72 @@ impl Alphabet {
     /// ```
     pub fn len(&self) -> usize {
         self.chars.len()
+    }
+
+    /// Maps a Rust built-in character (char) to a character of another type (Char).
+    ///
+    /// # Arguments
+    ///
+    /// * `c` - The character to map.
+    ///
+    /// # Returns
+    ///
+    /// `Ok(Char)` if the character is in the alphabet and the conversion to `Char` is successful,
+    /// `Err(Box<dyn std::error::Error>)` otherwise.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use stralg::utils::Alphabet;
+    ///
+    /// let alphabet = Alphabet::from_str("abc");
+    /// let result: u8 = alphabet.map_char('b').unwrap();
+    /// assert_eq!(result, 2);
+    /// ```
+    pub fn map_char<Char>(&self, c: char) -> Result<Char, Box<dyn std::error::Error>>
+    where
+        Char: CharacterTrait,
+    {
+        if self.len() > Char::MAX {
+            return Err("Alphabet too large for Char type".into());
+        }
+
+        let idx = match self.index(c) {
+            None => return Err("Character not in alphabet".into()),
+            Some(idx) => idx,
+        };
+
+        Char::try_from(idx).map_err(|_| "Index conversion failed".into())
+    }
+
+    /// Maps a Rust built-in string slice (str) to a vector of characters of another type (Char).
+    ///
+    /// This function maps each character in the string slice to a character of type `Char` using the
+    /// `map_char` function. The resulting vector contains the mapped characters in the same order as
+    /// they appear in the string slice, and essentially is another representation of the string, but
+    /// unlike `str` it is not in UTF-8 encoding so we can index individual characters in constant time.
+    ///
+    /// # Arguments
+    ///
+    /// * `s` - The string slice to map.
+    ///
+    /// # Returns
+    ///
+    /// `Ok(Vec<Char>)` if the conversion is successful, `Err(Box<dyn std::error::Error>)` otherwise.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use stralg::utils::Alphabet;
+    ///
+    /// let alphabet = Alphabet::from_str("abc");
+    /// let result: Vec<u8> = alphabet.map_str("abc").unwrap();
+    /// assert_eq!(result, vec![1, 2, 3]);
+    /// ```
+    pub fn map_str<Char>(&self, s: &str) -> Result<Vec<Char>, Box<dyn std::error::Error>>
+    where
+        Char: CharacterTrait,
+    {
+        s.chars().map(|c| self.map_char(c)).collect()
     }
 }

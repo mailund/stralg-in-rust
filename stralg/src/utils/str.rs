@@ -1,18 +1,13 @@
 use super::{Alphabet, CharacterTrait};
 use std::rc::Rc;
 
-pub enum Str {
-    U8(SizedStr<u8>),
-    U16(SizedStr<u16>),
-}
-
 /// A string type that uses a custom alphabet for character encoding.
-pub struct SizedStr<Char: CharacterTrait> {
-    pub alphabet: Rc<Alphabet>,
+pub struct Str<Char: CharacterTrait> {
     char_vector: Vec<Char>,
+    pub alphabet: Rc<Alphabet>,
 }
 
-impl<Char: CharacterTrait> SizedStr<Char> {
+impl<Char: CharacterTrait> Str<Char> {
     /// Creates a new `Str` from a given alphabet and a vector of characters.
     ///
     /// # Arguments
@@ -22,51 +17,26 @@ impl<Char: CharacterTrait> SizedStr<Char> {
     ///
     /// # Returns
     ///
-    /// A new `SizedStr` instance.
+    /// A new `Str` instance.
     ///
     /// # Examples
     ///
     /// ```
-    /// use stralg::utils::{Alphabet, SizedStr};
+    /// use stralg::utils::{Alphabet, Str};
     /// use std::rc::Rc;
     ///
     /// let alphabet = Rc::new(Alphabet::new(&['a', 'b', 'c']));
     /// let chars = vec![1u8, 2, 3];
-    /// let s = SizedStr::new(&alphabet, chars);
+    /// let s = Str::new(chars, &alphabet);
     /// assert_eq!(s[0], 1);
     /// assert_eq!(s[1], 2);
     /// assert_eq!(s[2], 3);
     /// ```
-    pub fn new(alphabet: &Rc<Alphabet>, x: Vec<Char>) -> Self {
+    pub fn new(x: Vec<Char>, alphabet: &Rc<Alphabet>) -> Self {
         Self {
-            alphabet: alphabet.clone(),
             char_vector: x,
+            alphabet: alphabet.clone(),
         }
-    }
-
-    /// Creates a new `Str` from a string slice.
-    ///
-    /// # Arguments
-    ///
-    /// * `s` - A string slice to convert.
-    ///
-    /// # Returns
-    ///
-    /// A new `SizedStr` instance.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use stralg::utils::SizedStr;
-    ///
-    /// let s = SizedStr::<u8>::from_str("abc").unwrap();
-    /// assert_eq!(s[0], 1);
-    /// assert_eq!(s[1], 2);
-    /// assert_eq!(s[2], 3);
-    /// ```
-    pub fn from_str(s: &str) -> Result<Self, Box<dyn std::error::Error>> {
-        let alphabet: Rc<Alphabet> = Rc::new(Alphabet::from_str(s));
-        Self::from_str_with_alphabet(s, &alphabet)
     }
 
     /// Creates a new `Str` from a string slice and a given alphabet.
@@ -78,40 +48,35 @@ impl<Char: CharacterTrait> SizedStr<Char> {
     ///
     /// # Returns
     ///
-    /// A new `SizedStr` instance.
+    /// A new `Str` instance.
     ///
     /// # Examples
     ///
     /// ```
-    /// use stralg::utils::{Alphabet, SizedStr};
+    /// use stralg::utils::{Alphabet, Str};
     /// use std::rc::Rc;
     ///
     /// let alphabet = Rc::new(Alphabet::new(&['a', 'b', 'c']));
-    /// let s = SizedStr::<u8>::from_str_with_alphabet("abc", &alphabet).unwrap();
+    /// let s = Str::<u8>::from_str("abc", &alphabet).unwrap();
     /// assert_eq!(s[0], 1);
     /// assert_eq!(s[1], 2);
     /// assert_eq!(s[2], 3);
     /// ```
-    pub fn from_str_with_alphabet(
-        s: &str,
-        alphabet: &Rc<Alphabet>,
-    ) -> Result<Self, Box<dyn std::error::Error>> {
+    pub fn from_str(s: &str, alphabet: &Rc<Alphabet>) -> Result<Self, Box<dyn std::error::Error>> {
+        if alphabet.len() > Char::MAX {
+            return Err("Alphabet too large for Char type".into());
+        }
+
         let x = s
             .chars()
-            .map(|c| {
-                alphabet
-                    .index(c)
-                    .ok_or_else(|| "Character not in alphabet".into())
-                    .and_then(|idx| {
-                        Char::try_from(idx).map_err(|_| "Index conversion failed".into())
-                    })
-            })
+            .map(|c| alphabet.map_char(c))
             .collect::<Result<Vec<Char>, Box<dyn std::error::Error>>>()?;
-        Ok(Self::new(&alphabet, x))
+
+        Ok(Self::new(x, &alphabet))
     }
 
-    /// Creates a new `SizedStr` from a string slice using the same alphabet
-    /// as the current `SizedStr`. This maps the  two strings to the same string-space,
+    /// Creates a new `Str` from a string slice using the same alphabet
+    /// as the current `Str`. This maps the  two strings to the same string-space,
     /// so they can be manipulated together.
     ///
     /// # Arguments
@@ -120,17 +85,17 @@ impl<Char: CharacterTrait> SizedStr<Char> {
     ///
     /// # Returns
     ///
-    /// A new `SizedStr` instance.
+    /// A new `Str` instance.
     ///
     /// # Examples
     ///
     /// ```
-    /// use stralg::utils::{Alphabet, SizedStr};
+    /// use stralg::utils::{Alphabet, Str};
     /// use std::rc::Rc;
     ///
     /// let alphabet = Rc::new(Alphabet::new(&['a', 'b', 'c']));
     /// let chars = vec![1u8, 2, 3];
-    /// let s1 = SizedStr::new(&alphabet, chars);
+    /// let s1 = Str::new(chars, &alphabet);
     /// let s2 = s1.translate_to_this_alphabet("abc").unwrap();
     /// assert_eq!(s2[0], 1);
     /// assert_eq!(s2[1], 2);
@@ -138,7 +103,7 @@ impl<Char: CharacterTrait> SizedStr<Char> {
     /// ```
     pub fn translate_to_this_alphabet(&self, s: &str) -> Result<Self, Box<dyn std::error::Error>> {
         let alphabet = self.alphabet.clone();
-        Self::from_str_with_alphabet(s, &alphabet)
+        Self::from_str(s, &alphabet)
     }
 
     /// Returns the length of the string.
@@ -150,12 +115,12 @@ impl<Char: CharacterTrait> SizedStr<Char> {
     /// # Examples
     ///
     /// ```
-    /// use stralg::utils::{Alphabet, SizedStr};
+    /// use stralg::utils::{Alphabet, Str};
     /// use std::rc::Rc;
     ///
-    /// let alphabet = Rc::new(Alphabet::new(&['a', 'b', 'c']).unwrap());
+    /// let alphabet = Rc::new(Alphabet::new(&['a', 'b', 'c']));
     /// let chars = vec![1u8, 2, 3];
-    /// let s = SizedStr::new(&alphabet, chars);
+    /// let s = Str::new(chars, &alphabet);
     /// assert_eq!(s.len(), 3);
     /// ```
     pub fn len(&self) -> usize {
@@ -163,7 +128,7 @@ impl<Char: CharacterTrait> SizedStr<Char> {
     }
 }
 
-impl<Char: CharacterTrait> std::ops::Index<usize> for SizedStr<Char>
+impl<Char: CharacterTrait> std::ops::Index<usize> for Str<Char>
 where
     Char: TryFrom<usize> + Copy,
     <Char as TryFrom<usize>>::Error: std::fmt::Debug,
@@ -175,7 +140,7 @@ where
     }
 }
 
-impl<Char: CharacterTrait> std::ops::IndexMut<usize> for SizedStr<Char>
+impl<Char: CharacterTrait> std::ops::IndexMut<usize> for Str<Char>
 where
     Char: TryFrom<usize> + Copy,
     <Char as TryFrom<usize>>::Error: std::fmt::Debug,
