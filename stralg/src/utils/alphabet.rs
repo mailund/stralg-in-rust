@@ -125,40 +125,6 @@ impl<Char: CharacterTrait> AlphabetImpl<Char> {
         AlphabetImpl::new(&chars)
     }
 
-    // /// Translates a string slice into a vector of the underlying type in the implementation.
-    // ///
-    // /// # Arguments
-    // ///
-    // /// * `s` - A string slice to translate.
-    // ///
-    // /// # Returns
-    // ///
-    // /// A vector of the underlying type representing the indices of the characters in the string.
-    // ///
-    // /// # Examples
-    // ///
-    // /// ```
-    // /// use stralg::utils::AlphabetImpl;
-    // ///
-    // /// let chars = vec!['a', 'b', 'c'];
-    // /// let alphabet = AlphabetImpl::<u8>::new(&chars).unwrap();
-    // /// let translated = alphabet.translate("abc").unwrap();
-    // /// assert_eq!(translated.to_vec(), vec![1, 2, 3]);
-    // /// ```
-    // pub fn translate(&self, s: &str) -> Result<Str<Char>, Box<dyn std::error::Error>> {
-    //     let vec: Vec<Char> = s
-    //         .chars()
-    //         .map(|c| {
-    //             self.index(c)
-    //                 .ok_or_else(|| "Character not in alphabet".into())
-    //                 .and_then(|idx| {
-    //                     Char::try_from(idx).map_err(|_| "Index conversion failed".into())
-    //                 })
-    //         })
-    //         .collect()?;
-    //     Ok(Str::new(&Rc::new(self.clone()), vec))
-    // }
-
     /// Checks if the alphabet contains the given character.
     ///
     /// # Arguments
