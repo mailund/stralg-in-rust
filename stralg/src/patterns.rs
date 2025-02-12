@@ -138,11 +138,29 @@ mod tests {
     }
 
     #[test]
+    fn test_border_array_all_as() {
+        let p = "aaaa";
+        let alpha = Rc::new(Alphabet::from_str(p));
+        let p: Str<u8> = Str::from_str(p, &alpha).unwrap();
+        let b = border_array(&p);
+        assert_eq!(b, vec![0, 1, 2, 3]);
+    }
+
+    #[test]
     fn test_strict_border_array() {
         let p = "abracadabra";
         let alpha = Rc::new(Alphabet::from_str(p));
         let p: Str<u8> = Str::from_str(p, &alpha).unwrap();
         let b = strict_border_array(&p);
         assert_eq!(b, vec![0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 4]);
+    }
+
+    #[test]
+    fn test_strict_border_array_all_as() {
+        let p = "aaaa";
+        let alpha = Rc::new(Alphabet::from_str(p));
+        let p: Str<u8> = Str::from_str(p, &alpha).unwrap();
+        let b = strict_border_array(&p);
+        assert_eq!(b, vec![0, 0, 0, 3]);
     }
 }
