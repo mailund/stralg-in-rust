@@ -3,8 +3,8 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 pub enum Alphabet {
-    U8(Rc<SizedAlphabet<u8>>),
-    U16(Rc<SizedAlphabet<u16>>),
+    U8(Rc<AlphabetImpl<u8>>),
+    U16(Rc<AlphabetImpl<u16>>),
 }
 
 impl Alphabet {
@@ -12,8 +12,8 @@ impl Alphabet {
         const SMALL: usize = u8::MAX as usize;
         const LARGE: usize = u16::MAX as usize;
         match chars.len() {
-            0..SMALL => Ok(Alphabet::U8(Rc::new(SizedAlphabet::new(chars)?))),
-            SMALL..LARGE => Ok(Alphabet::U16(Rc::new(SizedAlphabet::new(chars)?))),
+            0..SMALL => Ok(Alphabet::U8(Rc::new(AlphabetImpl::new(chars)?))),
+            SMALL..LARGE => Ok(Alphabet::U16(Rc::new(AlphabetImpl::new(chars)?))),
             _ => Err("Alphabet too large".into()),
         }
     }
@@ -50,7 +50,7 @@ impl Alphabet {
 /// This is predominantly used for mapping UTF-8 str strings to vectors where we have
 /// constant time access to the characters, without relying on a Vec<char> which would take
 /// up four bytes per character.
-pub struct SizedAlphabet<Char>
+pub struct AlphabetImpl<Char>
 where
     Char: CharacterTrait,
 {
@@ -59,8 +59,8 @@ where
     _phantom: std::marker::PhantomData<Char>,
 }
 
-impl<Char: CharacterTrait> SizedAlphabet<Char> {
-    /// Creates a new `SizedAlphabet` from a slice of characters.
+impl<Char: CharacterTrait> AlphabetImpl<Char> {
+    /// Creates a new `AlphabetImpl` from a slice of characters.
     ///
     /// # Arguments
     ///
@@ -68,20 +68,20 @@ impl<Char: CharacterTrait> SizedAlphabet<Char> {
     ///
     /// # Returns
     ///
-    /// A `SizedAlphabet` containing the given characters and their corresponding indices.
+    /// A `AlphabetImpl` containing the given characters and their corresponding indices.
     ///
     /// # Examples
     ///
     /// ```
-    /// use stralg::utils::SizedAlphabet;
+    /// use stralg::utils::AlphabetImpl;
     ///
     /// let chars = vec!['a', 'b', 'c'];
-    /// let alphabet = SizedAlphabet::<u8>::new(&chars).unwrap();
+    /// let alphabet = AlphabetImpl::<u8>::new(&chars).unwrap();
     /// assert!(alphabet.contains('a'));
     /// assert_eq!(alphabet.index('b'), Some(2));
     /// assert_eq!(alphabet.len(), 3);
     /// ```
-    pub fn new(chars: &[char]) -> Result<SizedAlphabet<Char>, Box<dyn std::error::Error>> {
+    pub fn new(chars: &[char]) -> Result<AlphabetImpl<Char>, Box<dyn std::error::Error>> {
         let len = chars.len();
         if len > Char::MAX as usize {
             return Err("Alphabet too large for character type".into());
@@ -90,14 +90,14 @@ impl<Char: CharacterTrait> SizedAlphabet<Char> {
         for (i, &c) in chars.iter().enumerate() {
             indices.insert(c, i + 1); // The +1 is to leave room for the sentinel at zero
         }
-        Ok(SizedAlphabet::<Char> {
+        Ok(AlphabetImpl::<Char> {
             chars: chars.to_vec(),
             indices,
             _phantom: std::marker::PhantomData,
         })
     }
 
-    /// Creates a new `SizedAlphabet` from a string.
+    /// Creates a new `AlphabetImpl` from a string.
     ///
     /// The alphabet will contain the characters in the string plus zero as a sentinel.
     ///
@@ -107,22 +107,22 @@ impl<Char: CharacterTrait> SizedAlphabet<Char> {
     ///
     /// # Returns
     ///
-    /// A `SizedAlphabet` containing the characters in the string and their corresponding indices.
+    /// A `AlphabetImpl` containing the characters in the string and their corresponding indices.
     ///
     /// # Examples
     ///
     /// ```
-    /// use stralg::utils::SizedAlphabet;
+    /// use stralg::utils::AlphabetImpl;
     ///
     /// let s = "abc";
-    /// let alphabet = SizedAlphabet::<u8>::from_str(s).unwrap();
+    /// let alphabet = AlphabetImpl::<u8>::from_str(s).unwrap();
     /// assert!(alphabet.contains('a'));
     /// assert_eq!(alphabet.index('b'), Some(2));
     /// assert_eq!(alphabet.len(), 3);
     /// ```
-    pub fn from_str(s: &str) -> Result<SizedAlphabet<Char>, Box<dyn std::error::Error>> {
+    pub fn from_str(s: &str) -> Result<AlphabetImpl<Char>, Box<dyn std::error::Error>> {
         let chars: Vec<char> = s.chars().collect();
-        SizedAlphabet::new(&chars)
+        AlphabetImpl::new(&chars)
     }
 
     // /// Translates a string slice into a vector of the underlying type in the implementation.
@@ -138,10 +138,10 @@ impl<Char: CharacterTrait> SizedAlphabet<Char> {
     // /// # Examples
     // ///
     // /// ```
-    // /// use stralg::utils::SizedAlphabet;
+    // /// use stralg::utils::AlphabetImpl;
     // ///
     // /// let chars = vec!['a', 'b', 'c'];
-    // /// let alphabet = SizedAlphabet::<u8>::new(&chars).unwrap();
+    // /// let alphabet = AlphabetImpl::<u8>::new(&chars).unwrap();
     // /// let translated = alphabet.translate("abc").unwrap();
     // /// assert_eq!(translated.to_vec(), vec![1, 2, 3]);
     // /// ```
@@ -172,10 +172,10 @@ impl<Char: CharacterTrait> SizedAlphabet<Char> {
     /// # Examples
     ///
     /// ```
-    /// use stralg::utils::SizedAlphabet;
+    /// use stralg::utils::AlphabetImpl;
     ///
     /// let chars = vec!['a', 'b', 'c'];
-    /// let alphabet = SizedAlphabet::<u8>::new(&chars).unwrap();
+    /// let alphabet = AlphabetImpl::<u8>::new(&chars).unwrap();
     /// assert!(alphabet.contains('a'));
     /// assert!(!alphabet.contains('d'));
     /// ```
@@ -196,10 +196,10 @@ impl<Char: CharacterTrait> SizedAlphabet<Char> {
     /// # Examples
     ///
     /// ```
-    /// use stralg::utils::SizedAlphabet;
+    /// use stralg::utils::AlphabetImpl;
     ///
     /// let chars = vec!['a', 'b', 'c'];
-    /// let alphabet = SizedAlphabet::<u8>::new(&chars).unwrap();
+    /// let alphabet = AlphabetImpl::<u8>::new(&chars).unwrap();
     /// assert_eq!(alphabet.index('b'), Some(2));
     /// assert_eq!(alphabet.index('d'), None);
     /// ```
@@ -219,10 +219,10 @@ impl<Char: CharacterTrait> SizedAlphabet<Char> {
     /// # Examples
     ///
     /// ```
-    /// use stralg::utils::SizedAlphabet;
+    /// use stralg::utils::AlphabetImpl;
     ///
     /// let chars = vec!['a', 'b', 'c'];
-    /// let alphabet = SizedAlphabet::<u8>::new(&chars).unwrap();
+    /// let alphabet = AlphabetImpl::<u8>::new(&chars).unwrap();
     /// assert_eq!(alphabet.len(), 3);
     /// ```
     pub fn len(&self) -> usize {

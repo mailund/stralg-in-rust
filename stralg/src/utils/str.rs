@@ -1,4 +1,4 @@
-use super::{Alphabet, CharacterTrait, SizedAlphabet};
+use super::{Alphabet, AlphabetImpl, CharacterTrait};
 use std::rc::Rc;
 
 pub enum Str {
@@ -51,7 +51,7 @@ impl Str {
 
 /// A string type that uses a custom alphabet for character encoding.
 pub struct SizedStr<Char: CharacterTrait> {
-    pub alphabet: Rc<SizedAlphabet<Char>>,
+    pub alphabet: Rc<AlphabetImpl<Char>>,
     char_vector: Vec<Char>,
 }
 
@@ -70,17 +70,17 @@ impl<Char: CharacterTrait> SizedStr<Char> {
     /// # Examples
     ///
     /// ```
-    /// use stralg::utils::{SizedAlphabet, SizedStr};
+    /// use stralg::utils::{AlphabetImpl, SizedStr};
     /// use std::rc::Rc;
     ///
-    /// let alphabet = Rc::new(SizedAlphabet::new(&['a', 'b', 'c']).unwrap());
+    /// let alphabet = Rc::new(AlphabetImpl::new(&['a', 'b', 'c']).unwrap());
     /// let chars = vec![1u8, 2, 3];
     /// let s = SizedStr::new(&alphabet, chars);
     /// assert_eq!(s[0], 1);
     /// assert_eq!(s[1], 2);
     /// assert_eq!(s[2], 3);
     /// ```
-    pub fn new(alphabet: &Rc<SizedAlphabet<Char>>, x: Vec<Char>) -> Self {
+    pub fn new(alphabet: &Rc<AlphabetImpl<Char>>, x: Vec<Char>) -> Self {
         Self {
             alphabet: alphabet.clone(),
             char_vector: x,
@@ -108,7 +108,7 @@ impl<Char: CharacterTrait> SizedStr<Char> {
     /// assert_eq!(s[2], 3);
     /// ```
     pub fn from_str(s: &str) -> Result<Self, Box<dyn std::error::Error>> {
-        let alphabet: Rc<SizedAlphabet<Char>> = Rc::new(SizedAlphabet::from_str(s)?);
+        let alphabet: Rc<AlphabetImpl<Char>> = Rc::new(AlphabetImpl::from_str(s)?);
         Self::from_str_with_alphabet(s, &alphabet)
     }
 
@@ -126,10 +126,10 @@ impl<Char: CharacterTrait> SizedStr<Char> {
     /// # Examples
     ///
     /// ```
-    /// use stralg::utils::{SizedAlphabet, SizedStr};
+    /// use stralg::utils::{AlphabetImpl, SizedStr};
     /// use std::rc::Rc;
     ///
-    /// let alphabet = Rc::new(SizedAlphabet::new(&['a', 'b', 'c']).unwrap());
+    /// let alphabet = Rc::new(AlphabetImpl::new(&['a', 'b', 'c']).unwrap());
     /// let s = SizedStr::<u8>::from_str_with_alphabet("abc", &alphabet).unwrap();
     /// assert_eq!(s[0], 1);
     /// assert_eq!(s[1], 2);
@@ -137,7 +137,7 @@ impl<Char: CharacterTrait> SizedStr<Char> {
     /// ```
     pub fn from_str_with_alphabet(
         s: &str,
-        alphabet: &Rc<SizedAlphabet<Char>>,
+        alphabet: &Rc<AlphabetImpl<Char>>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let x = s
             .chars()
@@ -168,10 +168,10 @@ impl<Char: CharacterTrait> SizedStr<Char> {
     /// # Examples
     ///
     /// ```
-    /// use stralg::utils::{SizedAlphabet, SizedStr};
+    /// use stralg::utils::{AlphabetImpl, SizedStr};
     /// use std::rc::Rc;
     ///
-    /// let alphabet = Rc::new(SizedAlphabet::new(&['a', 'b', 'c']).unwrap());
+    /// let alphabet = Rc::new(AlphabetImpl::new(&['a', 'b', 'c']).unwrap());
     /// let chars = vec![1u8, 2, 3];
     /// let s1 = SizedStr::new(&alphabet, chars);
     /// let s2 = s1.translate_to_this_alphabet("abc").unwrap();
@@ -193,10 +193,10 @@ impl<Char: CharacterTrait> SizedStr<Char> {
     /// # Examples
     ///
     /// ```
-    /// use stralg::utils::{SizedAlphabet, SizedStr};
+    /// use stralg::utils::{AlphabetImpl, SizedStr};
     /// use std::rc::Rc;
     ///
-    /// let alphabet = Rc::new(SizedAlphabet::new(&['a', 'b', 'c']).unwrap());
+    /// let alphabet = Rc::new(AlphabetImpl::new(&['a', 'b', 'c']).unwrap());
     /// let chars = vec![1u8, 2, 3];
     /// let s = SizedStr::new(&alphabet, chars);
     /// assert_eq!(s.len(), 3);
