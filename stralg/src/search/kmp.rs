@@ -100,6 +100,9 @@ pub fn kmp<'a>(x: &'a str, p: &'a str) -> Box<dyn Iterator<Item = usize>> {
     if x.is_empty() || p.is_empty() {
         return Box::new(std::iter::empty());
     }
+    if x.len() < p.len() {
+        return Box::new(std::iter::empty());
+    }
 
     let mapper = StrMappers::new_from_str(x).unwrap(); // We unwrap because we don't expect alphabet larger than u16
     match mapper {
