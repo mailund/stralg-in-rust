@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use super::CharacterTrait;
+use super::char::{CharSize, CharacterTrait};
 
 /// An alphabet we can have strings over.
 ///
@@ -194,6 +194,25 @@ impl Alphabet {
     /// ```
     pub fn len(&self) -> usize {
         self.chars.len()
+    }
+
+    /// Returns the size of characters needed to represent a given string over this alphabet.
+    ///
+    /// # Returns
+    ///
+    /// The size of characters needed to represent a given string.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use stralg::utils::{Alphabet, CharSize};
+    ///
+    /// let alphabet = Alphabet::from_str("abc");
+    /// let result = alphabet.char_size().unwrap();
+    /// assert_eq!(result, CharSize::U8);
+    /// ```
+    pub fn char_size(&self) -> Result<CharSize, Box<dyn std::error::Error>> {
+        CharSize::from_alphabet_size(self.len())
     }
 
     /// Maps a Rust built-in character (char) to a character of another type (Char).
