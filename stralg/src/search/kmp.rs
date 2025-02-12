@@ -1,41 +1,40 @@
 use crate::strict_border_array;
+use crate::utils::{CharacterTrait, Str, StrMapper, StrMappers};
 
-struct KMPSearch {
+struct KMPSearch<Char: CharacterTrait> {
     /// The string we are searching in
-    x: Vec<char>,
+    x: Str<Char>,
     /// The pattern we are searching for
-    p: Vec<char>,
+    p: Str<Char>,
     /// The border array of the pattern
-    border_array: Vec<usize>,
+    ba: Vec<usize>,
     /// The current index in the string
     x_index: usize,
     /// The current index in the pattern
     p_index: usize,
 }
 
-impl KMPSearch {
-    fn new(x: &str, p: &str) -> KMPSearch {
-        let b = strict_border_array(p);
-        let x: Vec<char> = x.chars().collect();
-        let p: Vec<char> = p.chars().collect();
+impl<Char: CharacterTrait> KMPSearch<Char> {
+    // FIXME: chage border array to work on Str<Char>
+    fn new(x: Str<Char>, p: Str<Char>, ba: Vec<usize>) -> KMPSearch<Char> {
         KMPSearch {
-            x: x,
-            p: p,
-            border_array: b,
+            x,
+            p,
+            ba,
             x_index: 0,
             p_index: 0,
         }
     }
 }
 
-impl Iterator for KMPSearch {
+impl<Char: CharacterTrait> Iterator for KMPSearch<Char> {
     type Item = usize;
 
     fn next(&mut self) -> Option<usize> {
         let KMPSearch {
             x,
             p,
-            border_array: b,
+            ba: b,
             x_index: i,
             p_index: j,
             ..
@@ -103,5 +102,22 @@ pub fn kmp<'a>(x: &'a str, p: &'a str) -> Box<dyn Iterator<Item = usize>> {
         return Box::new(std::iter::empty());
     }
 
-    Box::new(KMPSearch::new(x, p))
+    let mapper = StrMappers::new_from_str(x).unwrap(); // We unwrap because we don't expect alphabet larger than u16
+    match mapper {
+        StrMappers::U8Mapper(mapper) => kmp_impl(x, p, mapper),
+        StrMappers::U16Mapper(mapper) => kmp_impl(x, p, mapper),
+    }
+}
+
+fn kmp_impl<Char>(x: &str, p: &str, mapper: StrMapper<Char>) -> Box<dyn Iterator<Item = usize>>
+where
+    Char: CharacterTrait,
+{
+    let ba = strict_border_array(p);
+    let x = mapper.map_str(x).unwrap(); // We built the string from x so this cannot fail...
+    let p = match mapper.map_str(p) {
+        Ok(p) => p,
+        Err(_) => return Box::new(std::iter::empty()),
+    };
+    Box::new(KMPSearch::new(x, p, ba))
 }

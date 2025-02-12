@@ -27,6 +27,19 @@ impl<Char: CharacterTrait> Iterator for NaiveSearch<Char> {
     }
 }
 
+fn naive_impl<Char>(x: &str, p: &str, mapper: StrMapper<Char>) -> Box<dyn Iterator<Item = usize>>
+where
+    Char: CharacterTrait,
+{
+    let x = mapper.map_str(x).unwrap();
+    let p = match x.translate_to_this_alphabet(p) {
+        Ok(p) => p,
+        Err(_) => return Box::new(std::iter::empty()),
+    };
+
+    Box::new(NaiveSearch { x, p, i: 0 })
+}
+
 /// Returns an iterator over the starting indices of occurrences of the pattern
 /// `p` in the text `x` using the naive string matching algorithm.
 ///
@@ -86,17 +99,4 @@ pub fn naive(x: &str, p: &str) -> Box<dyn Iterator<Item = usize>> {
         StrMappers::U8Mapper(mapper) => naive_impl(x, p, mapper),
         StrMappers::U16Mapper(mapper) => naive_impl(x, p, mapper),
     }
-}
-
-fn naive_impl<Char>(x: &str, p: &str, mapper: StrMapper<Char>) -> Box<dyn Iterator<Item = usize>>
-where
-    Char: CharacterTrait + 'static,
-{
-    let x = mapper.map_str(x).unwrap();
-    let p = match x.translate_to_this_alphabet(p) {
-        Ok(p) => p,
-        Err(_) => return Box::new(std::iter::empty()),
-    };
-
-    Box::new(NaiveSearch { x, p, i: 0 })
 }

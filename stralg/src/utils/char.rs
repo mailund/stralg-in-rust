@@ -2,7 +2,13 @@
 ///
 /// This trait is used to define the character types that can be used in the library.
 pub trait CharacterTrait:
-    Eq + std::hash::Hash + TryFrom<usize, Error: std::fmt::Debug> + Copy + Into<usize> + std::fmt::Debug
+    Eq
+    + std::hash::Hash
+    + TryFrom<usize, Error: std::fmt::Debug>
+    + Copy
+    + Into<usize>
+    + std::fmt::Debug
+    + 'static
 {
     const MAX: usize;
 }
