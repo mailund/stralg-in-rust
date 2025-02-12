@@ -120,3 +120,16 @@ where
     let ba = strict_border_array(&p);
     Box::new(KMPSearch::new(x, p, ba))
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_kmp() {
+        let x = "abracadabra";
+        let p = "abr";
+        let result: Vec<usize> = kmp(x, p).collect();
+        assert_eq!(result, vec![0, 7]);
+    }
+}
