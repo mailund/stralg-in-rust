@@ -7,6 +7,7 @@ use super::char::{CharSize, CharacterTrait};
 /// This is predominantly used for mapping UTF-8 str strings to vectors where we have
 /// constant time access to the characters, without relying on a Vec<char> which would take
 /// up four bytes per character.
+#[derive(Debug, PartialEq)]
 pub struct Alphabet {
     /// A vector of characters storing the alphabet in a specific order.
     chars: Vec<char>,

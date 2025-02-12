@@ -15,6 +15,16 @@ impl StrMappers {
             U16 => U16Mapper(StrMapper::new(alphabet)),
         }
     }
+
+    pub fn new_from_str(s: &str) -> Result<Self, Box<dyn std::error::Error>> {
+        let alphabet = Rc::new(Alphabet::from_str(s));
+        Ok(Self::new(&alphabet))
+    }
+
+    pub fn new_from_strs(strings: &[&str]) -> Result<Self, Box<dyn std::error::Error>> {
+        let alphabet = Rc::new(Alphabet::from_strs(strings));
+        Ok(Self::new(&alphabet))
+    }
 }
 
 pub struct StrMapper<Char>
@@ -29,19 +39,21 @@ impl<Char> StrMapper<Char>
 where
     Char: CharacterTrait,
 {
-    pub fn new(alphabet: &Rc<Alphabet>) -> Self {
+    pub(self) fn new(alphabet: &Rc<Alphabet>) -> Self {
         Self {
             alphabet: alphabet.clone(),
             _phantom: std::marker::PhantomData,
         }
     }
 
-    pub fn map_str(&self, s: &str) -> Result<Vec<Char>, Box<dyn std::error::Error>> {
-        self.alphabet.map_str(s)
+    pub fn map_str(&self, s: &str) -> Result<Str<Char>, Box<dyn std::error::Error>> {
+        let char_vector = self.alphabet.map_str::<Char>(s)?;
+        Ok(Str::new(char_vector, &self.alphabet))
     }
 }
 
 /// A string type that uses a custom alphabet for character encoding.
+#[derive(Debug, PartialEq, Clone)]
 pub struct Str<Char: CharacterTrait> {
     char_vector: Vec<Char>,
     pub alphabet: Rc<Alphabet>,
@@ -216,7 +228,7 @@ mod test {
         let alphabet = Rc::new(Alphabet::from_str("abc"));
         let mapper = StrMapper::<u8>::new(&alphabet);
         let result = mapper.map_str("abc").unwrap();
-        assert_eq!(result, vec![1, 2, 3]);
+        assert_eq!(result, Str::new(vec![1, 2, 3], &alphabet));
     }
 
     #[test]

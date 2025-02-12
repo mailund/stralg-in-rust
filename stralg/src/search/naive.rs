@@ -1,28 +1,16 @@
-use crate::utils::{Alphabet, CharacterTrait, Str};
-use std::rc::Rc;
+use crate::utils::{CharacterTrait, Str, StrMapper, StrMappers};
 
-struct NaiveSearch<Char: CharacterTrait>
-where
-    <Char as TryFrom<usize>>::Error: std::fmt::Debug, // FIXME: Add this to CharacterTrait
-{
+struct NaiveSearch<Char: CharacterTrait> {
     x: Str<Char>,
-    p: Option<Str<Char>>,
+    p: Str<Char>,
     i: usize,
 }
 
-impl<Char: CharacterTrait> Iterator for NaiveSearch<Char>
-where
-    <Char as TryFrom<usize>>::Error: std::fmt::Debug,
-{
+impl<Char: CharacterTrait> Iterator for NaiveSearch<Char> {
     type Item = usize;
 
     fn next(&mut self) -> Option<Self::Item> {
         let NaiveSearch { x, p, i } = self;
-        let p = match p {
-            Some(p) => p,
-            None => return None,
-        };
-
         let n = x.len();
         let m = p.len();
         while *i <= n - m {
@@ -93,23 +81,22 @@ pub fn naive(x: &str, p: &str) -> Box<dyn Iterator<Item = usize>> {
         return Box::new(std::iter::empty());
     }
 
-    let alphabet = Rc::new(Alphabet::from_str(x));
+    let mapper = StrMappers::new_from_str(x).unwrap(); // We unwrap because we don't expect alphabet larger than u16
+    match mapper {
+        StrMappers::U8Mapper(mapper) => naive_impl(x, p, mapper),
+        StrMappers::U16Mapper(mapper) => naive_impl(x, p, mapper),
+    }
+}
 
-    let x = Str::<u8>::from_str(x, &alphabet).unwrap();
+fn naive_impl<Char>(x: &str, p: &str, mapper: StrMapper<Char>) -> Box<dyn Iterator<Item = usize>>
+where
+    Char: CharacterTrait + 'static,
+{
+    let x = mapper.map_str(x).unwrap();
     let p = match x.translate_to_this_alphabet(p) {
-        Ok(p) => Some(p),
+        Ok(p) => p,
         Err(_) => return Box::new(std::iter::empty()),
     };
 
-    sized_naive(x, p)
-}
-
-pub fn sized_naive<Char: CharacterTrait + 'static>(
-    x: Str<Char>,
-    p: Option<Str<Char>>,
-) -> Box<dyn Iterator<Item = usize>>
-where
-    <Char as TryFrom<usize>>::Error: std::fmt::Debug,
-{
     Box::new(NaiveSearch { x, p, i: 0 })
 }

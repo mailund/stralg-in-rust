@@ -1,16 +1,15 @@
 /// A trait for character types.
 ///
 /// This trait is used to define the character types that can be used in the library.
-pub trait CharacterTrait: Eq + std::hash::Hash + TryFrom<usize> + Copy + Into<usize> {
-    type Error: std::fmt::Debug;
+pub trait CharacterTrait:
+    Eq + std::hash::Hash + TryFrom<usize, Error: std::fmt::Debug> + Copy + Into<usize> + std::fmt::Debug
+{
     const MAX: usize;
 }
 impl CharacterTrait for u8 {
-    type Error = std::num::TryFromIntError;
     const MAX: usize = u8::MAX as usize - 1; // -1 to leave room for the sentinel
 }
 impl CharacterTrait for u16 {
-    type Error = std::num::TryFromIntError;
     const MAX: usize = u16::MAX as usize - 1; // -1 to leave room for the sentinel
 }
 
