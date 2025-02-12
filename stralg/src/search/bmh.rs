@@ -52,33 +52,13 @@ impl<Char: CharacterTrait> Iterator for BMHSearch<Char> {
         let m = p.len();
         while *i <= n - m {
             let mut k = m - 1;
-            println!("0: i: {}, k: {}", i, k);
             while k > 0 && p[k] == x[*i + k] {
-                println!("1: i: {}, k: {}", i, k);
                 k -= 1;
             }
-            println!("2: i: {}, k: {}", i, k);
             if k == 0 && p[k] == x[*i] {
-                let jump = bad_char_table[x[*i].to_usize()];
-                println!("jump: {}", jump);
-                if jump == 0 {
-                    panic!("jump == 0");
-                }
-                if jump == 0 {
-                    *i += 1;
-                } else {
-                    *i += jump;
-                }
                 let hit = *i;
                 *i += bad_char_table[x[*i + m - 1].to_usize()];
-                println!("3: i: {}, k: {}", i, k);
-                println!("hit: {}", hit);
                 return Some(hit);
-            }
-            let jump = bad_char_table[x[*i].to_usize()];
-            println!("jump2: {}", jump);
-            if jump == 0 {
-                panic!("jump == 0");
             }
             *i += bad_char_table[x[*i + m - 1].to_usize()];
         }
