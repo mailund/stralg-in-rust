@@ -88,7 +88,7 @@ where
 /// assert_eq!(matches, vec![2]);
 /// ```
 pub fn naive(x: &str, p: &str) -> Box<dyn Iterator<Item = usize>> {
-    if p.len() == 0 {
+    if x.is_empty() || p.is_empty() {
         return Box::new(std::iter::empty());
     }
 

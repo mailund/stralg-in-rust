@@ -99,7 +99,7 @@ impl Iterator for KMPSearch {
 /// assert_eq!(matches, vec![0, 7]);
 /// ```
 pub fn kmp<'a>(x: &'a str, p: &'a str) -> Box<dyn Iterator<Item = usize>> {
-    if p.len() == 0 {
+    if x.is_empty() || p.is_empty() {
         return Box::new(std::iter::empty());
     }
 
