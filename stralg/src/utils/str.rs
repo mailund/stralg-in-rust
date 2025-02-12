@@ -31,7 +31,7 @@ pub struct StrMapper<Char>
 where
     Char: CharacterTrait,
 {
-    alphabet: Rc<Alphabet>,
+    pub alphabet: Rc<Alphabet>,
     _phantom: std::marker::PhantomData<Char>,
 }
 
@@ -217,6 +217,29 @@ mod test {
     }
 
     #[test]
+    fn test_str_mapper_large_alphabet() {
+        let letters: Vec<char> = (0..=u8::MAX).map(|c| c as char).collect(); // Too many chars for u8 (with sentinel)
+        let alphabet = Rc::new(Alphabet::new(&letters));
+        let mapper = StrMappers::new(&alphabet);
+        match mapper {
+            StrMappers::U16Mapper(_) => (),
+            _ => panic!("Expected StrMapper::U16"),
+        }
+    }
+
+    /* Skipped for now because we unwrap in StrMappers::new instead of returning a Result
+    #[test]
+    fn test_way_too_large_alphabet() {
+        let letters: Vec<char> = (0..=u16::MAX)
+            .map(|c| std::char::from_u32(c).unwrap())
+            .collect(); // Too many chars for u16
+        let alphabet = Rc::new(Alphabet::new(&letters));
+        let mapper = StrMappers::new(&alphabet);
+        assert!(mapper.is_err());
+    }
+    */
+
+    #[test]
     fn test_sized_str_mapper_new() {
         let alphabet = Rc::new(Alphabet::from_str("abc"));
         let mapper = StrMapper::<u8>::new(&alphabet);
@@ -244,6 +267,62 @@ mod test {
         let alphabet = Rc::new(Alphabet::from_str("abc"));
         let mapper = StrMapper::<u8>::new(&alphabet);
         let result = mapper.map_str("abcd");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_str_mappers_new_from_str() {
+        let mapper = StrMappers::new_from_str("abc").unwrap();
+        match mapper {
+            StrMappers::U8Mapper(_) => (),
+            _ => panic!("Expected StrMapper::U8"),
+        }
+    }
+
+    #[test]
+    fn test_str_mappers_new_from_strs() {
+        let mapper = StrMappers::new_from_strs(&["abc", "def"]).unwrap();
+        match mapper {
+            StrMappers::U8Mapper(_) => (),
+            _ => panic!("Expected StrMapper::U8"),
+        }
+    }
+
+    #[test]
+    fn test_mapper_map_str() {
+        let mapper = StrMappers::new_from_str("abc").unwrap();
+        let mapper = match mapper {
+            StrMappers::U8Mapper(mapper) => mapper,
+            _ => panic!("Expected StrMapper::U8"),
+        };
+        let result = mapper.map_str("abc").unwrap();
+        assert_eq!(result, Str::new(vec![1, 2, 3], &mapper.alphabet));
+    }
+
+    #[test]
+    fn test_str_new() {
+        let alphabet = Rc::new(Alphabet::from_str("abc"));
+        let chars = vec![1u8, 2, 3];
+        let s = Str::new(chars, &alphabet);
+        assert_eq!(s[0], 1);
+        assert_eq!(s[1], 2);
+        assert_eq!(s[2], 3);
+    }
+
+    #[test]
+    fn test_str_from_str() {
+        let alphabet = Rc::new(Alphabet::from_str("abc"));
+        let s = Str::<u8>::from_str("abc", &alphabet).unwrap();
+        assert_eq!(s[0], 1);
+        assert_eq!(s[1], 2);
+        assert_eq!(s[2], 3);
+    }
+
+    #[test]
+    fn test_from_str_alphabet_too_large() {
+        let letters: Vec<char> = (0..=u8::MAX).map(|c| c as char).collect(); // Too many chars for u8 (with sentinel)
+        let alphabet = Rc::new(Alphabet::new(&letters));
+        let result = Str::<u8>::from_str("abc", &alphabet);
         assert!(result.is_err());
     }
 }
