@@ -1,3 +1,5 @@
+use crate::utils::{CharacterTrait, Str};
+
 /// Computes the border array for the given pattern `p`.
 ///
 /// The border array is an array where the value at each index `i` is the length
@@ -17,37 +19,36 @@
 /// # Examples
 ///
 /// ```
-/// use stralg::border_array;
+/// use std::rc::Rc;
+/// use stralg::{border_array, utils::{Alphabet, Str}};
 ///
-/// let pattern = "abracadabra";
-/// let borders = border_array(pattern);
+/// let alphabet = Rc::new(Alphabet::from_str("abracadabra"));
+/// let pattern: Str<u8> = Str::from_str("abracadabra", &alphabet).unwrap();
+/// let borders = border_array(&pattern);
 /// assert_eq!(borders, vec![0, 0, 0, 1, 0, 1, 0, 1, 2, 3, 4]);
 /// ```
 ///
 /// ```
-/// use stralg::border_array;
+/// use std::rc::Rc;
+/// use stralg::{border_array, utils::{Alphabet, Str}};
 ///
-/// let pattern = "aaaa";
-/// let borders = border_array(pattern);
+/// let alphabet = Rc::new(Alphabet::from_str("a"));
+/// let pattern: Str<u8> = Str::from_str("aaaa", &alphabet).unwrap();
+/// let borders = border_array(&pattern);
 /// assert_eq!(borders, vec![0, 1, 2, 3]);
 /// ```
-///
-/// ```
-/// use stralg::border_array;
-///
-/// let pattern = "abcd";
-/// let borders = border_array(pattern);
-/// assert_eq!(borders, vec![0, 0, 0, 0]);
-/// ```
-pub fn border_array(p: &str) -> Vec<usize> {
+pub fn border_array<Char>(p: &Str<Char>) -> Vec<usize>
+where
+    Char: CharacterTrait,
+{
     let m = p.len();
     let mut ba = vec![0; m];
     let mut j = 0;
     for i in 1..m {
-        while j > 0 && &p[i..i + 1] != &p[j..j + 1] {
+        while j > 0 && &p[i] != &p[j] {
             j = ba[j - 1];
         }
-        if &p[i..i + 1] == &p[j..j + 1] {
+        if &p[i] == &p[j] {
             j += 1;
         }
         ba[i] = j;
@@ -75,33 +76,45 @@ pub fn border_array(p: &str) -> Vec<usize> {
 /// # Examples
 ///
 /// ```
-/// use stralg::strict_border_array;
+/// use std::rc::Rc;
+/// use stralg::{strict_border_array, utils::{Alphabet, Str}};
 ///
-/// let pattern = "abracadabra";
-/// let borders = strict_border_array(pattern);
+/// let alphabet = Rc::new(Alphabet::from_str("abracadabra"));
+/// let pattern: Str<u8> = Str::from_str("abracadabra", &alphabet).unwrap();
+///
+/// let borders = strict_border_array(&pattern);
 /// assert_eq!(borders, vec![0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 4]);
 /// ```
 ///
 /// ```
-/// use stralg::strict_border_array;
+/// use std::rc::Rc;
+/// use stralg::{strict_border_array, utils::{Alphabet, Str}};
 ///
-/// let pattern = "aaaa";
-/// let borders = strict_border_array(pattern);
+/// let alphabet = Rc::new(Alphabet::from_str("a"));
+/// let pattern: Str<u8> = Str::from_str("aaaa", &alphabet).unwrap();
+///
+/// let borders = strict_border_array(&pattern);
 /// assert_eq!(borders, vec![0, 0, 0, 3]);
 /// ```
 ///
 /// ```
-/// use stralg::strict_border_array;
+/// use std::rc::Rc;
+/// use stralg::{strict_border_array, utils::{Alphabet, Str}};
 ///
-/// let pattern = "abcd";
-/// let borders = strict_border_array(pattern);
+/// let alphabet = Rc::new(Alphabet::from_str("abcd"));
+/// let pattern: Str<u8> = Str::from_str("abcd", &alphabet).unwrap();
+///
+/// let borders = strict_border_array(&pattern);
 /// assert_eq!(borders, vec![0, 0, 0, 0]);
 /// ```
-pub fn strict_border_array(p: &str) -> Vec<usize> {
+pub fn strict_border_array<Char>(p: &Str<Char>) -> Vec<usize>
+where
+    Char: CharacterTrait,
+{
     let mut ba = border_array(p);
     for j in 1..(ba.len() - 1) {
         let b = ba[j];
-        if b > 0 && p[b..b + 1] == p[j + 1..j + 2] {
+        if b > 0 && p[b] == p[j + 1] {
             ba[j] = ba[b - 1];
         }
     }
@@ -110,19 +123,26 @@ pub fn strict_border_array(p: &str) -> Vec<usize> {
 
 #[cfg(test)]
 mod tests {
+    use crate::Alphabet;
+    use std::rc::Rc;
+
     use super::*;
 
     #[test]
     fn test_border_array() {
         let p = "abracadabra";
-        let b = border_array(p);
+        let alpha = Rc::new(Alphabet::from_str(p));
+        let p: Str<u8> = Str::from_str(p, &alpha).unwrap();
+        let b = border_array(&p);
         assert_eq!(b, vec![0, 0, 0, 1, 0, 1, 0, 1, 2, 3, 4]);
     }
 
     #[test]
     fn test_strict_border_array() {
         let p = "abracadabra";
-        let b = strict_border_array(p);
+        let alpha = Rc::new(Alphabet::from_str(p));
+        let p: Str<u8> = Str::from_str(p, &alpha).unwrap();
+        let b = strict_border_array(&p);
         assert_eq!(b, vec![0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 4]);
     }
 }

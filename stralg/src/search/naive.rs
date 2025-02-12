@@ -1,27 +1,16 @@
-use crate::utils::{CharacterTrait, SizedStr, Str};
+use crate::utils::{CharacterTrait, Str, StrMapper, StrMappers};
 
-struct NaiveSearch<Char: CharacterTrait>
-where
-    <Char as TryFrom<usize>>::Error: std::fmt::Debug, // FIXME: Add this to CharacterTrait
-{
-    x: SizedStr<Char>,
-    p: Option<SizedStr<Char>>,
+struct NaiveSearch<Char: CharacterTrait> {
+    x: Str<Char>,
+    p: Str<Char>,
     i: usize,
 }
 
-impl<Char: CharacterTrait> Iterator for NaiveSearch<Char>
-where
-    <Char as TryFrom<usize>>::Error: std::fmt::Debug,
-{
+impl<Char: CharacterTrait> Iterator for NaiveSearch<Char> {
     type Item = usize;
 
     fn next(&mut self) -> Option<Self::Item> {
         let NaiveSearch { x, p, i } = self;
-        let p = match p {
-            Some(p) => p,
-            None => return None,
-        };
-
         let n = x.len();
         let m = p.len();
         while *i <= n - m {
@@ -36,6 +25,19 @@ where
         }
         None
     }
+}
+
+fn naive_impl<Char>(x: &str, p: &str, mapper: StrMapper<Char>) -> Box<dyn Iterator<Item = usize>>
+where
+    Char: CharacterTrait,
+{
+    let x = mapper.map_str(x).unwrap();
+    let p = match x.translate_to_this_alphabet(p) {
+        Ok(p) => p,
+        Err(_) => return Box::new(std::iter::empty()),
+    };
+
+    Box::new(NaiveSearch { x, p, i: 0 })
 }
 
 /// Returns an iterator over the starting indices of occurrences of the pattern
@@ -88,25 +90,13 @@ where
 /// assert_eq!(matches, vec![2]);
 /// ```
 pub fn naive(x: &str, p: &str) -> Box<dyn Iterator<Item = usize>> {
-    if p.len() == 0 {
+    if x.is_empty() || p.is_empty() {
         return Box::new(std::iter::empty());
     }
 
-    let x = SizedStr::<u8>::from_str(x).unwrap();
-    let p = match x.translate_to_this_alphabet(p) {
-        Ok(p) => Some(p),
-        Err(_) => return Box::new(std::iter::empty()),
-    };
-
-    sized_naive(x, p)
-}
-
-pub fn sized_naive<Char: CharacterTrait + 'static>(
-    x: SizedStr<Char>,
-    p: Option<SizedStr<Char>>,
-) -> Box<dyn Iterator<Item = usize>>
-where
-    <Char as TryFrom<usize>>::Error: std::fmt::Debug,
-{
-    Box::new(NaiveSearch { x, p, i: 0 })
+    let mapper = StrMappers::new_from_str(x).unwrap(); // We unwrap because we don't expect alphabet larger than u16
+    match mapper {
+        StrMappers::U8Mapper(mapper) => naive_impl(x, p, mapper),
+        StrMappers::U16Mapper(mapper) => naive_impl(x, p, mapper),
+    }
 }
