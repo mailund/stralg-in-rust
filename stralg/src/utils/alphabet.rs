@@ -1,66 +1,19 @@
-use super::CharacterTrait;
 use std::collections::HashMap;
-use std::rc::Rc;
-
-pub enum Alphabet {
-    U8(Rc<AlphabetImpl<u8>>),
-    U16(Rc<AlphabetImpl<u16>>),
-}
-
-impl Alphabet {
-    pub fn new(chars: &[char]) -> Result<Self, Box<dyn std::error::Error>> {
-        const SMALL: usize = u8::MAX as usize;
-        const LARGE: usize = u16::MAX as usize;
-        match chars.len() {
-            0..SMALL => Ok(Alphabet::U8(Rc::new(AlphabetImpl::new(chars)?))),
-            SMALL..LARGE => Ok(Alphabet::U16(Rc::new(AlphabetImpl::new(chars)?))),
-            _ => Err("Alphabet too large".into()),
-        }
-    }
-
-    pub fn from_str(s: &str) -> Result<Self, Box<dyn std::error::Error>> {
-        let chars: Vec<char> = s.chars().collect();
-        Alphabet::new(&chars)
-    }
-
-    pub fn contains(&self, c: char) -> bool {
-        match self {
-            Alphabet::U8(alphabet) => alphabet.contains(c),
-            Alphabet::U16(alphabet) => alphabet.contains(c),
-        }
-    }
-
-    pub fn index(&self, c: char) -> Option<usize> {
-        match self {
-            Alphabet::U8(alphabet) => alphabet.index(c),
-            Alphabet::U16(alphabet) => alphabet.index(c),
-        }
-    }
-
-    pub fn len(&self) -> usize {
-        match self {
-            Alphabet::U8(alphabet) => alphabet.len(),
-            Alphabet::U16(alphabet) => alphabet.len(),
-        }
-    }
-}
 
 /// An alphabet we can have strings over.
 ///
 /// This is predominantly used for mapping UTF-8 str strings to vectors where we have
 /// constant time access to the characters, without relying on a Vec<char> which would take
 /// up four bytes per character.
-pub struct AlphabetImpl<Char>
-where
-    Char: CharacterTrait,
-{
+pub struct Alphabet {
+    /// A vector of characters storing the alphabet in a specific order.
     chars: Vec<char>,
+    /// A hash map mapping each character to its index in the `chars` vector.
     indices: HashMap<char, usize>,
-    _phantom: std::marker::PhantomData<Char>,
 }
 
-impl<Char: CharacterTrait> AlphabetImpl<Char> {
-    /// Creates a new `AlphabetImpl` from a slice of characters.
+impl Alphabet {
+    /// Creates a new `Alphabet` from a slice of characters.
     ///
     /// # Arguments
     ///
@@ -68,36 +21,32 @@ impl<Char: CharacterTrait> AlphabetImpl<Char> {
     ///
     /// # Returns
     ///
-    /// A `AlphabetImpl` containing the given characters and their corresponding indices.
+    /// A `Alphabet` containing the given characters and their corresponding indices.
     ///
     /// # Examples
     ///
     /// ```
-    /// use stralg::utils::AlphabetImpl;
+    /// use stralg::utils::Alphabet;
     ///
     /// let chars = vec!['a', 'b', 'c'];
-    /// let alphabet = AlphabetImpl::<u8>::new(&chars).unwrap();
+    /// let alphabet = Alphabet::new(&chars);
     /// assert!(alphabet.contains('a'));
     /// assert_eq!(alphabet.index('b'), Some(2));
     /// assert_eq!(alphabet.len(), 3);
     /// ```
-    pub fn new(chars: &[char]) -> Result<AlphabetImpl<Char>, Box<dyn std::error::Error>> {
+    pub fn new(chars: &[char]) -> Alphabet {
         let len = chars.len();
-        if len > Char::MAX as usize {
-            return Err("Alphabet too large for character type".into());
-        };
         let mut indices = HashMap::with_capacity(len);
         for (i, &c) in chars.iter().enumerate() {
             indices.insert(c, i + 1); // The +1 is to leave room for the sentinel at zero
         }
-        Ok(AlphabetImpl::<Char> {
+        Alphabet {
             chars: chars.to_vec(),
             indices,
-            _phantom: std::marker::PhantomData,
-        })
+        }
     }
 
-    /// Creates a new `AlphabetImpl` from a string.
+    /// Creates a new `Alphabet` from a string.
     ///
     /// The alphabet will contain the characters in the string plus zero as a sentinel.
     ///
@@ -107,22 +56,72 @@ impl<Char: CharacterTrait> AlphabetImpl<Char> {
     ///
     /// # Returns
     ///
-    /// A `AlphabetImpl` containing the characters in the string and their corresponding indices.
+    /// A `Alphabet` containing the characters in the string and their corresponding indices.
     ///
     /// # Examples
     ///
     /// ```
-    /// use stralg::utils::AlphabetImpl;
+    /// use stralg::utils::Alphabet;
     ///
     /// let s = "abc";
-    /// let alphabet = AlphabetImpl::<u8>::from_str(s).unwrap();
+    /// let alphabet = Alphabet::from_str(s);
     /// assert!(alphabet.contains('a'));
     /// assert_eq!(alphabet.index('b'), Some(2));
     /// assert_eq!(alphabet.len(), 3);
     /// ```
-    pub fn from_str(s: &str) -> Result<AlphabetImpl<Char>, Box<dyn std::error::Error>> {
+    pub fn from_str(s: &str) -> Alphabet {
         let chars: Vec<char> = s.chars().collect();
-        AlphabetImpl::new(&chars)
+        Alphabet::new(&chars)
+    }
+
+    /// Creates a new `Alphabet` from a slice of string slices.
+    ///
+    /// This function iterates over each string in the slice and collects every unique character,
+    /// preserving the order in which they first appear. Duplicate characters are ignored, ensuring each
+    /// character appears only once in the resulting alphabet.
+    ///
+    /// # Arguments
+    ///
+    /// * `strings` - A slice of string slices to include in the alphabet.
+    ///
+    /// # Returns
+    ///
+    /// A `Alphabet` containing the unique characters from the provided strings and their corresponding indices,
+    /// where indexing starts at 1 (with zero reserved as a sentinel).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use stralg::utils::Alphabet;
+    ///
+    /// let strings = ["hello", "world"];
+    /// let alphabet = Alphabet::from_strs(&strings);
+    ///
+    /// // Check that the alphabet contains unique characters from "hello" and "world"
+    /// assert!(alphabet.contains('h'));
+    /// assert!(alphabet.contains('e'));
+    /// assert!(alphabet.contains('l'));
+    /// assert!(alphabet.contains('o'));
+    /// assert!(alphabet.contains('w'));
+    /// assert!(alphabet.contains('r'));
+    /// assert!(alphabet.contains('d'));
+    ///
+    /// // The expected unique characters are: 'h', 'e', 'l', 'o', 'w', 'r', 'd'
+    /// assert_eq!(alphabet.len(), 7);
+    ///
+    /// // Additional check for indexing (note: index values start at 1)
+    /// assert_eq!(alphabet.index('h'), Some(1));
+    /// ```
+    pub fn from_strs(strings: &[&str]) -> Alphabet {
+        let mut chars = Vec::new();
+        for s in strings {
+            for c in s.chars() {
+                if !chars.contains(&c) {
+                    chars.push(c);
+                }
+            }
+        }
+        Alphabet::new(&chars)
     }
 
     /// Checks if the alphabet contains the given character.
@@ -138,10 +137,10 @@ impl<Char: CharacterTrait> AlphabetImpl<Char> {
     /// # Examples
     ///
     /// ```
-    /// use stralg::utils::AlphabetImpl;
+    /// use stralg::utils::Alphabet;
     ///
     /// let chars = vec!['a', 'b', 'c'];
-    /// let alphabet = AlphabetImpl::<u8>::new(&chars).unwrap();
+    /// let alphabet = Alphabet::new(&chars);
     /// assert!(alphabet.contains('a'));
     /// assert!(!alphabet.contains('d'));
     /// ```
@@ -162,10 +161,10 @@ impl<Char: CharacterTrait> AlphabetImpl<Char> {
     /// # Examples
     ///
     /// ```
-    /// use stralg::utils::AlphabetImpl;
+    /// use stralg::utils::Alphabet;
     ///
     /// let chars = vec!['a', 'b', 'c'];
-    /// let alphabet = AlphabetImpl::<u8>::new(&chars).unwrap();
+    /// let alphabet = Alphabet::new(&chars);
     /// assert_eq!(alphabet.index('b'), Some(2));
     /// assert_eq!(alphabet.index('d'), None);
     /// ```
@@ -185,10 +184,10 @@ impl<Char: CharacterTrait> AlphabetImpl<Char> {
     /// # Examples
     ///
     /// ```
-    /// use stralg::utils::AlphabetImpl;
+    /// use stralg::utils::Alphabet;
     ///
     /// let chars = vec!['a', 'b', 'c'];
-    /// let alphabet = AlphabetImpl::<u8>::new(&chars).unwrap();
+    /// let alphabet = Alphabet::new(&chars);
     /// assert_eq!(alphabet.len(), 3);
     /// ```
     pub fn len(&self) -> usize {
