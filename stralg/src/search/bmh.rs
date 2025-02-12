@@ -1,3 +1,5 @@
+use core::panic;
+
 use crate::utils::{CharacterTrait, Str, StrMapper, StrMappers};
 
 struct BMHSearch<Char>
@@ -15,8 +17,8 @@ where
     Char: CharacterTrait,
 {
     let mut bad_char_table = vec![p.len(); p.alphabet.len() + 1];
-    for (i, c) in p.iter().enumerate() {
-        bad_char_table[c.to_usize()] = i;
+    for i in 0..(p.len() - 1) {
+        bad_char_table[p[i].to_usize()] = p.len() - i - 1;
     }
     bad_char_table
 }
@@ -50,12 +52,33 @@ impl<Char: CharacterTrait> Iterator for BMHSearch<Char> {
         let m = p.len();
         while *i <= n - m {
             let mut k = m - 1;
+            println!("0: i: {}, k: {}", i, k);
             while k > 0 && p[k] == x[*i + k] {
+                println!("1: i: {}, k: {}", i, k);
                 k -= 1;
             }
+            println!("2: i: {}, k: {}", i, k);
             if k == 0 && p[k] == x[*i] {
-                *i += m;
-                return Some(*i - m);
+                let jump = bad_char_table[x[*i].to_usize()];
+                println!("jump: {}", jump);
+                if jump == 0 {
+                    panic!("jump == 0");
+                }
+                if jump == 0 {
+                    *i += 1;
+                } else {
+                    *i += jump;
+                }
+                let hit = *i;
+                *i += bad_char_table[x[*i + m - 1].to_usize()];
+                println!("3: i: {}, k: {}", i, k);
+                println!("hit: {}", hit);
+                return Some(hit);
+            }
+            let jump = bad_char_table[x[*i].to_usize()];
+            println!("jump2: {}", jump);
+            if jump == 0 {
+                panic!("jump == 0");
             }
             *i += bad_char_table[x[*i + m - 1].to_usize()];
         }
@@ -101,9 +124,9 @@ mod test {
         let p = "abracadabra"; // len = 11
         let alphabet = Rc::new(Alphabet::from_str(p)); // $abcdr
         let p: Str<u8> = Str::from_str(p, &alphabet).unwrap();
-        // Rightmost position of each character in the pattern
-        // $ -> 11, a -> 10, b -> 8, c -> 4, d -> 6, r -> 9
+        // Jumps table (right-most index from the right, or full pattern if unknown)
+        // $ -> 11, a -> 3, b -> 2, c -> 6, d -> 4, r -> 1
         let result = build_bad_char_table(&p);
-        assert_eq!(result, vec![11, 10, 8, 4, 6, 9]);
+        assert_eq!(result, vec![11, 3, 2, 6, 4, 1]);
     }
 }

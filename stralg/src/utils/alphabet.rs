@@ -327,7 +327,10 @@ mod test {
 
         assert_eq!(alphabet.len(), 7);
 
-        assert_eq!(alphabet.index('h'), Some(1));
+        assert_eq!(alphabet.index('d'), Some(1));
+        assert_eq!(alphabet.index('e'), Some(2));
+        assert_eq!(alphabet.index('h'), Some(3));
+        assert_eq!(alphabet.index('l'), Some(4));
     }
 
     #[test]
