@@ -94,6 +94,7 @@ pub fn naive(x: &str, p: &str) -> Box<dyn Iterator<Item = usize>> {
     }
 
     let alphabet = Rc::new(Alphabet::from_str(x));
+
     let x = Str::<u8>::from_str(x, &alphabet).unwrap();
     let p = match x.translate_to_this_alphabet(p) {
         Ok(p) => Some(p),

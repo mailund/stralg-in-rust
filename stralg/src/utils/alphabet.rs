@@ -282,3 +282,88 @@ impl Alphabet {
         s.chars().map(|c| self.map_char(c)).collect()
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_alphabet_new() {
+        let chars = vec!['a', 'b', 'c'];
+        let alphabet = Alphabet::new(&chars);
+        assert!(alphabet.contains('a'));
+        assert_eq!(alphabet.index('b'), Some(2));
+        assert_eq!(alphabet.len(), 3);
+    }
+
+    #[test]
+    fn test_alphabet_from_str() {
+        let s = "abc";
+        let alphabet = Alphabet::from_str(s);
+        assert!(alphabet.contains('a'));
+        assert_eq!(alphabet.index('b'), Some(2));
+        assert_eq!(alphabet.len(), 3);
+    }
+
+    #[test]
+    fn test_alphabet_from_strs() {
+        let strings = ["hello", "world"];
+        let alphabet = Alphabet::from_strs(&strings);
+
+        assert!(alphabet.contains('h'));
+        assert!(alphabet.contains('e'));
+        assert!(alphabet.contains('l'));
+        assert!(alphabet.contains('o'));
+        assert!(alphabet.contains('w'));
+        assert!(alphabet.contains('r'));
+        assert!(alphabet.contains('d'));
+
+        assert_eq!(alphabet.len(), 7);
+
+        assert_eq!(alphabet.index('h'), Some(1));
+    }
+
+    #[test]
+    fn test_alphabet_contains() {
+        let chars = vec!['a', 'b', 'c'];
+        let alphabet = Alphabet::new(&chars);
+        assert!(alphabet.contains('a'));
+        assert!(!alphabet.contains('d'));
+    }
+
+    #[test]
+    fn test_alphabet_index() {
+        let chars = vec!['a', 'b', 'c'];
+        let alphabet = Alphabet::new(&chars);
+        assert_eq!(alphabet.index('b'), Some(2));
+        assert_eq!(alphabet.index('d'), None);
+    }
+
+    #[test]
+    fn test_alphabet_len() {
+        let chars = vec!['a', 'b', 'c'];
+        let alphabet = Alphabet::new(&chars);
+        assert_eq!(alphabet.len(), 3);
+    }
+
+    #[test]
+    fn test_alphabet_char_size() {
+        let alphabet = Alphabet::from_str("abc");
+        let result = alphabet.char_size().unwrap();
+        assert_eq!(result, CharSize::U8);
+    }
+
+    #[test]
+    fn test_alphabet_map_char() {
+        let alphabet = Alphabet::from_str("abc");
+        let result: u8 = alphabet.map_char('b').unwrap();
+        assert_eq!(result, 2);
+    }
+
+    #[test]
+    fn test_alphabet_map_str() {
+        let alphabet = Alphabet::from_str("abc");
+        let result: Vec<u8> = alphabet.map_str("abc").unwrap();
+        assert_eq!(result, vec![1, 2, 3]);
+    }
+}

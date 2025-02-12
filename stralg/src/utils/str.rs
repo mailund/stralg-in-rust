@@ -1,5 +1,45 @@
-use super::{Alphabet, CharacterTrait};
+use super::{Alphabet, CharSize, CharacterTrait};
 use std::rc::Rc;
+
+pub enum StrMappers {
+    U8Mapper(StrMapper<u8>),
+    U16Mapper(StrMapper<u16>),
+}
+
+impl StrMappers {
+    pub fn new(alphabet: &Rc<Alphabet>) -> Self {
+        use CharSize::*;
+        use StrMappers::*;
+        match alphabet.char_size().unwrap() {
+            U8 => U8Mapper(StrMapper::new(alphabet)),
+            U16 => U16Mapper(StrMapper::new(alphabet)),
+        }
+    }
+}
+
+pub struct StrMapper<Char>
+where
+    Char: CharacterTrait,
+{
+    alphabet: Rc<Alphabet>,
+    _phantom: std::marker::PhantomData<Char>,
+}
+
+impl<Char> StrMapper<Char>
+where
+    Char: CharacterTrait,
+{
+    pub fn new(alphabet: &Rc<Alphabet>) -> Self {
+        Self {
+            alphabet: alphabet.clone(),
+            _phantom: std::marker::PhantomData,
+        }
+    }
+
+    pub fn map_str(&self, s: &str) -> Result<Vec<Char>, Box<dyn std::error::Error>> {
+        self.alphabet.map_str(s)
+    }
+}
 
 /// A string type that uses a custom alphabet for character encoding.
 pub struct Str<Char: CharacterTrait> {
@@ -147,5 +187,51 @@ where
 {
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
         &mut self.char_vector[index]
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_str_mapper_new() {
+        let alphabet = Rc::new(Alphabet::from_str("abc"));
+        let mapper = StrMappers::new(&alphabet);
+        match mapper {
+            StrMappers::U8Mapper(_) => (),
+            _ => panic!("Expected StrMapper::U8"),
+        }
+    }
+
+    #[test]
+    fn test_sized_str_mapper_new() {
+        let alphabet = Rc::new(Alphabet::from_str("abc"));
+        let mapper = StrMapper::<u8>::new(&alphabet);
+        assert_eq!(mapper.alphabet.len(), 3);
+    }
+
+    #[test]
+    fn test_sized_str_mapper_map_str() {
+        let alphabet = Rc::new(Alphabet::from_str("abc"));
+        let mapper = StrMapper::<u8>::new(&alphabet);
+        let result = mapper.map_str("abc").unwrap();
+        assert_eq!(result, vec![1, 2, 3]);
+    }
+
+    #[test]
+    fn test_sized_str_mapper_map_str_error() {
+        let alphabet = Rc::new(Alphabet::from_str("abc"));
+        let mapper = StrMapper::<u8>::new(&alphabet);
+        let result = mapper.map_str("def");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_sized_str_mapper_map_str_error_2() {
+        let alphabet = Rc::new(Alphabet::from_str("abc"));
+        let mapper = StrMapper::<u8>::new(&alphabet);
+        let result = mapper.map_str("abcd");
+        assert!(result.is_err());
     }
 }
