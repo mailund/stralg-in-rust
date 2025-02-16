@@ -297,6 +297,62 @@ where
     }
 }
 
+impl<Char: CharacterTrait> std::ops::Index<std::ops::Range<usize>> for Str<Char> {
+    type Output = [Char];
+
+    fn index(&self, range: std::ops::Range<usize>) -> &Self::Output {
+        &self.char_vector[range]
+    }
+}
+
+impl<Char: CharacterTrait> std::ops::IndexMut<std::ops::Range<usize>> for Str<Char> {
+    fn index_mut(&mut self, range: std::ops::Range<usize>) -> &mut Self::Output {
+        &mut self.char_vector[range]
+    }
+}
+
+impl<Char: CharacterTrait> std::ops::Index<std::ops::RangeFrom<usize>> for Str<Char> {
+    type Output = [Char];
+
+    fn index(&self, range: std::ops::RangeFrom<usize>) -> &Self::Output {
+        &self.char_vector[range]
+    }
+}
+
+impl<Char: CharacterTrait> std::ops::IndexMut<std::ops::RangeFrom<usize>> for Str<Char> {
+    fn index_mut(&mut self, range: std::ops::RangeFrom<usize>) -> &mut Self::Output {
+        &mut self.char_vector[range]
+    }
+}
+
+impl<Char: CharacterTrait> std::ops::Index<std::ops::RangeTo<usize>> for Str<Char> {
+    type Output = [Char];
+
+    fn index(&self, range: std::ops::RangeTo<usize>) -> &Self::Output {
+        &self.char_vector[range]
+    }
+}
+
+impl<Char: CharacterTrait> std::ops::IndexMut<std::ops::RangeTo<usize>> for Str<Char> {
+    fn index_mut(&mut self, range: std::ops::RangeTo<usize>) -> &mut Self::Output {
+        &mut self.char_vector[range]
+    }
+}
+
+impl<Char: CharacterTrait> std::ops::Index<std::ops::RangeFull> for Str<Char> {
+    type Output = [Char];
+
+    fn index(&self, range: std::ops::RangeFull) -> &Self::Output {
+        &self.char_vector[range]
+    }
+}
+
+impl<Char: CharacterTrait> std::ops::IndexMut<std::ops::RangeFull> for Str<Char> {
+    fn index_mut(&mut self, range: std::ops::RangeFull) -> &mut Self::Output {
+        &mut self.char_vector[range]
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;

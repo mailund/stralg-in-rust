@@ -13,14 +13,10 @@ impl<Char: CharacterTrait> Iterator for NaiveSearch<Char> {
         let NaiveSearch { x, p, i } = self;
         let n = x.len();
         let m = p.len();
-        while *i <= n - m {
-            let mut k = 0;
-            while k < m && p[k] == x[*i + k] {
-                k += 1;
-            }
-            *i += 1;
-            if k == m {
-                return Some(*i - 1);
+        for j in *i..=(n - m) {
+            if &x[j..(j + m)] == &p[..] {
+                *i = j + 1;
+                return Some(j);
             }
         }
         None
@@ -32,7 +28,7 @@ where
     Char: CharacterTrait,
 {
     let x = mapper.map_str(x).unwrap();
-    let p = match x.translate_to_this_alphabet(p) {
+    let p = match mapper.map_str(p) {
         Ok(p) => p,
         Err(_) => return Box::new(std::iter::empty()),
     };
